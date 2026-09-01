@@ -1,25 +1,27 @@
 package br.edu.ifc.bikes.entity;
 
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
-// Lombok
+//===lombok
 @Getter
 @Setter
 @ToString
+//===lombok
 
 @Entity
 @Table(name = "usuario")
 public class Usuario implements java.io.Serializable {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private long id;
+    private Long id;
 
     @Column(name = "username", nullable = false, unique = true, length = 100)
     private String username;
@@ -27,13 +29,13 @@ public class Usuario implements java.io.Serializable {
     @Column(name = "password", nullable = false)
     private String password;
 
-    // A constante definida no enum passa a ser uma string no banco
+    //a constante definida no enum passa a ser uma string no bd
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 50)
+    @Column(name="role", nullable = false, length = 50)
     private Role role = Role.CLIENTE;
 
-    private LocalDateTime dtCriacao;
-    private LocalDateTime dtModificacao;
+    private LocalDateTime dataCriacao;
+    private LocalDateTime dataModificacao;
     private String criadoPor;
     private String modificadoPor;
 
@@ -43,9 +45,9 @@ public class Usuario implements java.io.Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if(obj == null) return false;
-        if(obj == this) return true;
+        if (obj == null) return false;
+        if (obj == this) return true;
         Usuario usuario = (Usuario) obj;
-        return Object.equals(id, usuario.id);
+        return Objects.equals(id, usuario.id);
     }
 }
