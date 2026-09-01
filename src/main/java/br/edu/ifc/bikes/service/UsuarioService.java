@@ -16,4 +16,9 @@ public class UsuarioService {
     public Usuario create(Usuario usuario){
         return usuarioRepository.save(usuario);
     }
+
+    @Transactional
+    public Usuario getById(Long id){
+        return usuarioRepository.findById(id).orElse(null);
+    }
 }

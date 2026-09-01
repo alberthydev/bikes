@@ -5,10 +5,7 @@ import br.edu.ifc.bikes.entity.Usuario;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/v1/usuarios")
@@ -21,6 +18,17 @@ public class UsuarioController {
     public ResponseEntity<Usuario> create(@RequestBody Usuario usuario){
         Usuario usuarioCriado = usuarioService.create(usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioCriado);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Usuario> getById(@PathVariable Long id){
+        Usuario usuario = usuarioService.getById(id);
+
+        if(usuario != null){
+            return ResponseEntity.ok(usuario);
+        }else{
+            return ResponseEntity.notFound().build();
+        }
     }
 
 }
