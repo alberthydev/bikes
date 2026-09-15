@@ -16,7 +16,7 @@ import java.util.Objects;
 //===lombok
 
 @Entity
-@Table(name = "usuario")
+@Table(name = "usuarios")
 public class Usuario implements java.io.Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
