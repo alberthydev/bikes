@@ -1,6 +1,7 @@
 package br.edu.ifc.bikes.web.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,13 +15,15 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorMessage> methodArgumentNotValidException(
-            MethodArgumentNotValidException ex,
-            HttpServletRequest request,
-            BindingResult result){
-        
+        HttpServletRequest request,
+        BindingResult result){
+
         return ResponseEntity
                 .status(HttpStatus.UNPROCESSABLE_CONTENT)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(new ErrorMessage(request, HttpStatus.UNPROCESSABLE_CONTENT, "Campo(s) inválido(s)", result));
+                .body(new ErrorMessage(request,
+                        HttpStatus.UNPROCESSABLE_CONTENT,
+                        message = "Campos inválidos"),
+                        result);
     }
 }
