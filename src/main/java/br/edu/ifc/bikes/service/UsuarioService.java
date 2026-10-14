@@ -2,9 +2,11 @@ package br.edu.ifc.bikes.service;
 
 import br.edu.ifc.bikes.dto.UsuarioRequestDTO;
 import br.edu.ifc.bikes.dto.UsuarioResponseDTO;
+import br.edu.ifc.bikes.dto.UsuarioSenhaDTO;
 import br.edu.ifc.bikes.dto.mapper.UsuarioMapper;
 import br.edu.ifc.bikes.entity.Usuario;
 import br.edu.ifc.bikes.exception.EntityNotFoundException;
+import br.edu.ifc.bikes.exception.PasswordInvalidException;
 import br.edu.ifc.bikes.exception.UsernameUniqueViolationException;
 import br.edu.ifc.bikes.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
@@ -36,10 +38,16 @@ public class UsuarioService {
         ));
     }
 
-    public UsuarioResponseDTO updatePassword(Long id, String password) {
+    public UsuarioResponseDTO updatePassword(Long id, UsuarioSenhaDTO usuarioSenhaDTO) {
         Usuario usuario = usuarioRepository.findById(id).orElse(null);
         if (usuario != null){
-            usuario.setPassword(password);
+            if (!usuario.getPassword().equals(usuarioSenhaDTO.senhaAtual())) {
+                throw new PasswordInvalidException("A senha atual é inválida");
+            }
+            if (!usuarioSenhaDTO.novaSenha().equals(usuarioSenhaDTO.confirmacaoSenha())) {
+                throw new PasswordInvalidException("A nova senha e a confirmação de senha não conferem");
+            }
+            usuario.setPassword(usuarioSenhaDTO.novaSenha());
             return usuarioMapper.toResponse(usuarioRepository.save(usuario));
         }
         return null;
