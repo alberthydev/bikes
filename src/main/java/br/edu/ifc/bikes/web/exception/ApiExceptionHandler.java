@@ -1,7 +1,8 @@
 package br.edu.ifc.bikes.web.exception;
 
+import br.edu.ifc.bikes.exception.EntityNotFoundException;
+import br.edu.ifc.bikes.exception.UsernameUniqueViolationException;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,15 +16,35 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorMessage> methodArgumentNotValidException(
-        HttpServletRequest request,
-        BindingResult result){
-
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request,
+            BindingResult result){
+        
         return ResponseEntity
                 .status(HttpStatus.UNPROCESSABLE_CONTENT)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(new ErrorMessage(request,
-                        HttpStatus.UNPROCESSABLE_CONTENT,
-                        message = "Campos inválidos"),
-                        result);
+                .body(new ErrorMessage(request, HttpStatus.UNPROCESSABLE_CONTENT, "Campo(s) inválido(s)", result));
+    }
+
+    @ExceptionHandler(UsernameUniqueViolationException.class)
+    public ResponseEntity<ErrorMessage> usernameUniqueViolationException(
+            RuntimeException ex,
+            HttpServletRequest request){
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorMessage> EntityNotFoundException(
+            RuntimeException ex,
+            HttpServletRequest request){
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorMessage(request, HttpStatus.NOT_FOUND, ex.getMessage()));
     }
 }
