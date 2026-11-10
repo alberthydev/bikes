@@ -17,11 +17,10 @@ public class ErrorMessage {
 
     private String path;
     private String method;
-    private int status; //código http
-    private String statusMessage; //mensagem do status http
+    private int status;
+    private String statusMessage;
     private String message;
 
-    //indica que o campo errors será incluído na resposta JSON apenas se não for nulo
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Map<String, String> errors;
 
@@ -35,7 +34,6 @@ public class ErrorMessage {
         this.message = message;
     }
 
-    //BindingResult é uma interface do String que contém os erros de validação
     public ErrorMessage(HttpServletRequest request, HttpStatus status, String message, BindingResult result){
         this.path = request.getRequestURI();
         this.method = request.getMethod();

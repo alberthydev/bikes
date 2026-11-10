@@ -11,6 +11,7 @@ import br.edu.ifc.bikes.exception.UsernameUniqueViolationException;
 import br.edu.ifc.bikes.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,10 +22,12 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final UsuarioMapper usuarioMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public UsuarioResponseDTO create(UsuarioRequestDTO usuarioRequestDTO) {
        try {
            Usuario usuario = usuarioMapper.toUsuario(usuarioRequestDTO);
+           usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
            return usuarioMapper.toResponse(usuarioRepository.save(usuario));
        } catch (RuntimeException ex) {
            throw new UsernameUniqueViolationException(String.format("O nome de usuario '%s' ja existe", usuarioRequestDTO.username()));
@@ -39,21 +42,30 @@ public class UsuarioService {
     }
 
     public UsuarioResponseDTO updatePassword(Long id, UsuarioSenhaDTO usuarioSenhaDTO) {
-        Usuario usuario = usuarioRepository.findById(id).orElse(null);
-        if (usuario != null){
-            if (!usuario.getPassword().equals(usuarioSenhaDTO.senhaAtual())) {
-                throw new PasswordInvalidException("A senha atual é inválida");
-            }
-            if (!usuarioSenhaDTO.novaSenha().equals(usuarioSenhaDTO.confirmacaoSenha())) {
-                throw new PasswordInvalidException("A nova senha e a confirmação de senha não conferem");
-            }
-            usuario.setPassword(usuarioSenhaDTO.novaSenha());
-            return usuarioMapper.toResponse(usuarioRepository.save(usuario));
+        Usuario usuario = usuarioRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(String.format("Usuario com id:%s nao encontrado", id))
+        );
+        if (!passwordEncoder.matches(usuarioSenhaDTO.senhaAtual(), usuario.getPassword())) {
+            throw new PasswordInvalidException("A senha atual é inválida");
         }
-        return null;
+        if (!usuarioSenhaDTO.novaSenha().equals(usuarioSenhaDTO.confirmacaoSenha())) {
+            throw new PasswordInvalidException("A nova senha e a confirmação de senha não conferem");
+        }
+        usuario.setPassword(passwordEncoder.encode(usuarioSenhaDTO.novaSenha()));
+        return usuarioMapper.toResponse(usuarioRepository.save(usuario));
     }
 
     public List<UsuarioResponseDTO> getAll(){
         return usuarioMapper.toResponse(usuarioRepository.findAll());
+    }
+
+    @Transactional()
+    public Usuario buscarPorNome(String username) {
+        return usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException(String.format("Usuário '%s' não encontrado", username)));
+    }
+
+    public Usuario.Role buscarRolePorUsername(String username) {
+        return usuarioRepository.findRoleByUsername(username);
     }
 }
