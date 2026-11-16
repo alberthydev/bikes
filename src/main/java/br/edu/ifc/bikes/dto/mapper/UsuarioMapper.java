@@ -11,4 +11,16 @@ public interface UsuarioMapper {
     Usuario toUsuario(UsuarioRequestDTO usuarioRequestDTO);
     UsuarioResponseDTO toResponse(Usuario usuario);
     List<UsuarioResponseDTO> toResponse(List<Usuario> usuarios);
+
+    /**
+     * Expõe o papel sem o prefixo exigido pelo Spring Security: ROLE_ADMIN -> ADMIN.
+     * O prefixo continua no banco; apenas o contrato da API fica mais simples.
+     */
+    default String toRole(Usuario.Role role) {
+        if (role == null) {
+            return null;
+        }
+        String nome = role.name();
+        return nome.startsWith("ROLE_") ? nome.substring("ROLE_".length()) : nome;
+    }
 }

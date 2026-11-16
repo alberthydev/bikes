@@ -31,7 +31,9 @@ public class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/usuarios").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth").permitAll()
                         .requestMatchers("/docs-bikes.html", "/docs-bikes/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
                         .anyRequest().authenticated()
+                ).headers(headers -> headers.frameOptions(frame -> frame.sameOrigin())
                 ).sessionManagement(
                         session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 ).addFilterBefore(

@@ -3,32 +3,24 @@ package br.edu.ifc.bikes;
 import br.edu.ifc.bikes.dto.UsuarioRequestDTO;
 import br.edu.ifc.bikes.dto.UsuarioResponseDTO;
 import br.edu.ifc.bikes.web.exception.ErrorMessage;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.web.reactive.server.WebTestClient;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(scripts = "/sql/usuarios/usuarios-insert.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @Sql(scripts = "/sql/usuarios/usuarios-delete.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
-public class UsuarioIT extends RuntimeException {
-    @LocalServerPort
-    int port;
+class UsuarioIT extends IntegrationTestSupport {
 
-    WebTestClient testClient;
+    private static final String ADMIN = "jose@gmail.com";
+    private static final String CLIENTE = "maria@gmail.com";
+    private static final String SENHA = "123456";
 
-    @BeforeEach
-    void setUp(){
-        this.testClient = WebTestClient
-                .bindToServer()
-                .baseUrl("http://localhost:" + port)
-                .build();
-    }
     @Test
-    public void criarUsuario_UsernamePasswordInvalidos_RetornaUsuarioCriado(){
+    void criarUsuario_DadosValidos_RetornaUsuarioCriado() {
         UsuarioResponseDTO responseBody = testClient
                 .post()
                 .uri("/api/v1/usuarios")
@@ -37,16 +29,17 @@ public class UsuarioIT extends RuntimeException {
                 .exchange()
                 .expectStatus().isCreated()
                 .expectBody(UsuarioResponseDTO.class)
-                .returnResult().getResponseBody();
+                .returnResult()
+                .getResponseBody();
 
-        org.assertj.core.api.Assertions.assertThat(responseBody).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(responseBody.id()).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(responseBody.username()).isEqualTo("fabio@gmail.com");
-        org.assertj.core.api.Assertions.assertThat(responseBody.role()).isEqualTo("CLIENTE");
+        assertThat(responseBody).isNotNull();
+        assertThat(responseBody.id()).isNotNull();
+        assertThat(responseBody.username()).isEqualTo("fabio@gmail.com");
+        assertThat(responseBody.role()).isEqualTo("CLIENTE");
     }
 
     @Test
-    public void criarUsuario_UsernameExistente_RetornaErrorMessageStatus409(){
+    void criarUsuario_UsernameRepetido_RetornaErrorMessageStatus409() {
         ErrorMessage responseBody = testClient
                 .post()
                 .uri("/api/v1/usuarios")
@@ -55,81 +48,145 @@ public class UsuarioIT extends RuntimeException {
                 .exchange()
                 .expectStatus().isEqualTo(409)
                 .expectBody(ErrorMessage.class)
-                .returnResult().getResponseBody();
+                .returnResult()
+                .getResponseBody();
 
-        org.assertj.core.api.Assertions.assertThat(responseBody).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(responseBody.getStatus()).isEqualTo(409);
+        assertThat(responseBody).isNotNull();
+        assertThat(responseBody.getStatus()).isEqualTo(409);
     }
 
     @Test
-    public void criarUsuario_UsernameInvalido_RetornaErrorMessageStatus422(){
+    void criarUsuario_UsernameInvalido_RetornaErrorMessageStatus422() {
+        for (String usernameInvalido : new String[]{"", "jose@", "jose@gmail."}) {
+            ErrorMessage responseBody = testClient
+                    .post()
+                    .uri("/api/v1/usuarios")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(new UsuarioRequestDTO(usernameInvalido, "123456"))
+                    .exchange()
+                    .expectStatus().isEqualTo(422)
+                    .expectBody(ErrorMessage.class)
+                    .returnResult()
+                    .getResponseBody();
+
+            assertThat(responseBody).isNotNull();
+            assertThat(responseBody.getStatus()).isEqualTo(422);
+        }
+    }
+
+    @Test
+    void criarUsuario_PasswordInvalido_RetornaErrorMessageStatus422() {
         ErrorMessage responseBody = testClient
                 .post()
                 .uri("/api/v1/usuarios")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new UsuarioRequestDTO("", "123456"))
+                .bodyValue(new UsuarioRequestDTO("fabio@gmail.com", "12345"))
                 .exchange()
                 .expectStatus().isEqualTo(422)
                 .expectBody(ErrorMessage.class)
-                .returnResult().getResponseBody();
+                .returnResult()
+                .getResponseBody();
 
-        org.assertj.core.api.Assertions.assertThat(responseBody).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(responseBody.getStatus()).isEqualTo(422);
-
-        responseBody = testClient
-                .post()
-                .uri("/api/v1/usuarios")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new UsuarioRequestDTO("jose@", "123456"))
-                .exchange()
-                .expectStatus().isEqualTo(422)
-                .expectBody(ErrorMessage.class)
-                .returnResult().getResponseBody();
-
-        org.assertj.core.api.Assertions.assertThat(responseBody).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(responseBody.getStatus()).isEqualTo(422);
-
-        responseBody = testClient
-                .post()
-                .uri("/api/v1/usuarios")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new UsuarioRequestDTO("jose@gmail.", "123456"))
-                .exchange()
-                .expectStatus().isEqualTo(422)
-                .expectBody(ErrorMessage.class)
-                .returnResult().getResponseBody();
-
-        org.assertj.core.api.Assertions.assertThat(responseBody).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(responseBody.getStatus()).isEqualTo(422);
+        assertThat(responseBody).isNotNull();
+        assertThat(responseBody.getStatus()).isEqualTo(422);
     }
 
     @Test
-    public void buscarUsuario_IdExistente_RetornaUsuario(){
+    void buscarUsuario_IdExistente_RetornaUsuario() {
+        String token = tokenFor(ADMIN, SENHA);
+
         UsuarioResponseDTO responseBody = testClient
                 .get()
                 .uri("/api/v1/usuarios/100")
+                .header("Authorization", "Bearer " + token)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(UsuarioResponseDTO.class)
-                .returnResult().getResponseBody();
+                .returnResult()
+                .getResponseBody();
 
-        org.assertj.core.api.Assertions.assertThat(responseBody).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(responseBody.id()).isEqualTo(100);
-        org.assertj.core.api.Assertions.assertThat(responseBody.username()).isEqualTo("jose@gmail.com");
-        org.assertj.core.api.Assertions.assertThat(responseBody.role()).isEqualTo("ADMIN");
+        assertThat(responseBody).isNotNull();
+        assertThat(responseBody.id()).isEqualTo(100);
+        assertThat(responseBody.username()).isEqualTo("jose@gmail.com");
+        assertThat(responseBody.role()).isEqualTo("ADMIN");
     }
 
     @Test
-    public void buscarUsuario_IdInexistente_RetornaUsuario(){
+    void buscarUsuario_IdInexistente_RetornaErrorMessageStatus404() {
+        String token = tokenFor(ADMIN, SENHA);
+
         ErrorMessage responseBody = testClient
                 .get()
                 .uri("/api/v1/usuarios/110")
+                .header("Authorization", "Bearer " + token)
                 .exchange()
                 .expectStatus().isNotFound()
                 .expectBody(ErrorMessage.class)
-                .returnResult().getResponseBody();
+                .returnResult()
+                .getResponseBody();
 
-        org.assertj.core.api.Assertions.assertThat(responseBody).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(responseBody.getStatus()).isEqualTo(404);
+        assertThat(responseBody).isNotNull();
+        assertThat(responseBody.getStatus()).isEqualTo(404);
+    }
+
+    @Test
+    void buscarUsuario_ClienteConsultandoOutroUsuario_RetornaStatus403() {
+        String token = tokenFor(CLIENTE, SENHA);
+
+        testClient
+                .get()
+                .uri("/api/v1/usuarios/100")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    @Test
+    void buscarUsuario_ClienteConsultandoProprioUsuario_RetornaUsuario() {
+        String token = tokenFor(CLIENTE, SENHA);
+
+        UsuarioResponseDTO responseBody = testClient
+                .get()
+                .uri("/api/v1/usuarios/101")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(UsuarioResponseDTO.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(responseBody).isNotNull();
+        assertThat(responseBody.username()).isEqualTo("maria@gmail.com");
+        assertThat(responseBody.role()).isEqualTo("CLIENTE");
+    }
+
+    @Test
+    void listarUsuarios_ComAdmin_RetornaLista() {
+        String token = tokenFor(ADMIN, SENHA);
+
+        UsuarioResponseDTO[] responseBody = testClient
+                .get()
+                .uri("/api/v1/usuarios")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(UsuarioResponseDTO[].class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(responseBody).isNotNull();
+        assertThat(responseBody).hasSize(3);
+    }
+
+    @Test
+    void listarUsuarios_ComCliente_RetornaStatus403() {
+        String token = tokenFor(CLIENTE, SENHA);
+
+        testClient
+                .get()
+                .uri("/api/v1/usuarios")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isForbidden();
     }
 }
