@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Locabike · Painel de demonstração</title>
+    <link rel="stylesheet" href="/app/app.css">
+</head>
+<body>
+
+<header class="topo">
+    <div class="marca">
+        <span class="logo" aria-hidden="true">🚲</span>
+        <div>
+            <h1>Locabike</h1>
+            <p>Painel de demonstração da API de aluguel de bicicletas</p>
+        </div>
+    </div>
+    <div class="topo-direita">
+        <a class="link-topo" href="/swagger-ui.html" target="_blank" rel="noopener">Swagger</a>
+        <div id="usuario" class="usuario oculto">
+            <span id="usuarioNome" class="usuario-nome"></span>
+            <span id="usuarioPerfil" class="selo"></span>
+            <button id="btnSair" class="botao pequeno secundario" type="button">Sair</button>
+        </div>
+    </div>
+</header>
+
+<main class="conteudo">
+
+    <!-- ============ LOGIN ============ -->
+    <section id="telaLogin" class="cartao-login">
+        <div class="cartao-login-info">
+            <h2>Entre para explorar cada função</h2>
+            <p>
+                A interface conversa com a API REST do projeto: login com JWT, cadastro de
+                bicicletas e clientes, locação, devolução e relatório em PDF.
+            </p>
+            <ul class="lista-contas">
+                <li>
+                    <strong>Administrador</strong>
+                    <code>admin@bikes.com</code>
+                </li>
+                <li>
+                    <strong>Cliente</strong>
+                    <code>ana@bikes.com</code>
+                </li>
+                <li>
+                    <strong>Cliente</strong>
+                    <code>bruno@bikes.com</code>
+                </li>
+            </ul>
+            <p class="dica">Senha de todas as contas de demonstração: <code>123456</code></p>
+        </div>
+
+        <form id="formLogin" class="cartao-login-form" autocomplete="off">
+            <h3>Login</h3>
+            <label>
+                Usuário
+                <input id="loginUsuario" type="email" required value="admin@bikes.com" placeholder="email@exemplo.com">
+            </label>
+            <label>
+                Senha
+                <input id="loginSenha" type="password" required value="123456" placeholder="••••••">
+            </label>
+            <button id="btnEntrar" class="botao" type="submit">Entrar</button>
+            <div class="atalhos">
+                <button type="button" class="botao pequeno secundario" data-conta="admin@bikes.com">Usar admin</button>
+                <button type="button" class="botao pequeno secundario" data-conta="ana@bikes.com">Usar Ana</button>
+                <button type="button" class="botao pequeno secundario" data-conta="bruno@bikes.com">Usar Bruno</button>
+            </div>
+            <p id="loginErro" class="erro oculto"></p>
+        </form>
+    </section>
+
+    <!-- ============ APLICAÇÃO ============ -->
+    <div id="telaApp" class="oculto">
+
+        <div class="aviso">
+            <strong>Como esta tela funciona:</strong>
+            cada botão dispara uma chamada real para a API. Aba
+            <button type="button" class="link-interno" data-aba="api">Chamadas à API</button>
+            para ver método, caminho, status e corpo de cada requisição.
+        </div>
+
+        <nav class="abas" id="abas">
+            <button type="button" class="aba" data-aba="bicicletas">Bicicletas</button>
+            <button type="button" class="aba" data-aba="locacoes">Locações e devoluções</button>
+            <button type="button" class="aba" data-aba="clientes">Clientes</button>
+            <button type="button" class="aba" data-aba="api">Chamadas à API</button>
+        </nav>
+
+        <!-- ---------- BICICLETAS ---------- -->
+        <section class="aba-conteudo" data-tela="bicicletas">
+            <div class="cabecalho-secao">
+                <div>
+                    <h2>Bicicletas</h2>
+                    <p>Cadastro, consulta por código, filtro por status e manutenção do catálogo.</p>
+                </div>
+                <div class="acoes">
+                    <input id="buscaCodigo" type="search" placeholder="Buscar por código (ex.: BK-001)">
+                    <button id="btnBuscarCodigo" class="botao secundario pequeno" type="button">Buscar código</button>
+                </div>
+            </div>
+
+            <div class="filtros" id="filtrosStatus">
+                <button type="button" class="filtro ativo" data-status="">Todas</button>
+                <button type="button" class="filtro" data-status="DISPONIVEL">Disponíveis</button>
+                <button type="button" class="filtro" data-status="ALUGADA">Alugadas</button>
+                <button type="button" class="filtro" data-status="MANUTENCAO">Manutenção</button>
+            </div>
+
+            <div class="tabela-area">
+                <table class="tabela">
+                    <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Bicicleta</th>
+                        <th>Cor</th>
+                        <th>Aro</th>
+                        <th>Status</th>
+                        <th id="thAcoesBicicleta" class="oculto">Ações</th>
+                    </tr>
+                    </thead>
+                    <tbody id="corpoBicicletas"></tbody>
+                </table>
+                <p id="vazioBicicletas" class="vazio oculto">Nenhuma bicicleta encontrada.</p>
+            </div>
+
+            <div id="formBicicletaArea" class="cartao-form oculto">
+                <h3>Cadastrar bicicleta</h3>
+                <form id="formBicicleta" class="grade-form">
+                    <label>Código <input name="codigo" required maxlength="20" placeholder="BK-007"></label>
+                    <label>Marca <input name="marca" required maxlength="50" placeholder="Caloi"></label>
+                    <label>Modelo <input name="modelo" required maxlength="50" placeholder="Elite Carbon"></label>
+                    <label>Cor <input name="cor" required maxlength="30" placeholder="Preta"></label>
+                    <label>Aro <input name="aro" type="number" min="12" max="29" required value="29"></label>
+                    <label>Status
+                        <select name="status">
+                            <option value="DISPONIVEL">Disponível</option>
+                            <option value="ALUGADA">Alugada</option>
+                            <option value="MANUTENCAO">Manutenção</option>
+                        </select>
+                    </label>
+                    <div class="linha-form">
+                        <button class="botao" type="submit">Cadastrar</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ---------- LOCAÇÕES ---------- -->
+        <section class="aba-conteudo oculto" data-tela="locacoes">
+            <div class="cabecalho-secao">
+                <div>
+                    <h2>Locações e devoluções</h2>
+                    <p>Tarifa de R$ 5,00 por hora iniciada. A bicicleta fica indisponível enquanto a locação está ativa.</p>
+                </div>
+                <div id="areaRelatorio" class="acoes oculto">
+                    <button id="btnRelatorio" class="botao" type="button">Baixar relatório em PDF</button>
+                </div>
+            </div>
+
+            <form id="formLocacao" class="cartao-form oculto">
+                <h3>Solicitar locação</h3>
+                <div class="grade-form">
+                    <label>Bicicleta disponível <select name="bicicletaId" id="selectBicicletas" required></select></label>
+                    <label>Previsão de devolução <input name="previsaoDevolucao" type="datetime-local" required></label>
+                    <label>Número do cartão <input name="numeroCartao" required value="4111111111111111" inputmode="numeric" maxlength="19"></label>
+                    <div class="linha-form">
+                        <button class="botao" type="submit">Solicitar</button>
+                    </div>
+                </div>
+                <p class="dica">A API guarda apenas os 4 últimos dígitos do cartão.</p>
+            </form>
+
+            <div class="tabela-area">
+                <h3 id="tituloLocacoes">Minhas locações</h3>
+                <table class="tabela">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th id="thClienteLocacao">Cliente</th>
+                        <th>Bicicleta</th>
+                        <th>Retirada</th>
+                        <th>Previsão</th>
+                        <th>Devolução</th>
+                        <th>Duração</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                    </thead>
+                    <tbody id="corpoLocacoes"></tbody>
+                </table>
+                <p id="vazioLocacoes" class="vazio oculto">Nenhuma locação registrada.</p>
+            </div>
+        </section>
+
+        <!-- ---------- CLIENTES ---------- -->
+        <section class="aba-conteudo oculto" data-tela="clientes">
+            <div class="cabecalho-secao">
+                <div>
+                    <h2>Clientes</h2>
+                    <p>Cada cliente está vinculado a um usuário do sistema. O vínculo é criado pelo próprio cliente logado.</p>
+                </div>
+            </div>
+
+            <div class="tabela-area">
+                <table class="tabela">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nome</th>
+                        <th>CPF</th>
+                        <th>Telefone</th>
+                        <th>E-mail</th>
+                        <th>Usuário</th>
+                    </tr>
+                    </thead>
+                    <tbody id="corpoClientes"></tbody>
+                </table>
+                <p id="vazioClientes" class="vazio oculto">Nenhum cliente para exibir.</p>
+            </div>
+
+            <div id="areaNovoCliente" class="cartao-form oculto">
+                <h3>Completar meu cadastro de cliente</h3>
+                <p class="dica">Seu usuário ainda não possui um cadastro de cliente. Sem ele não é possível alugar bicicletas.</p>
+                <form id="formCliente" class="grade-form">
+                    <label>Nome completo <input name="nome" required minlength="3" maxlength="100"></label>
+                    <label>CPF <input name="cpf" required maxlength="11" inputmode="numeric" placeholder="Somente números"></label>
+                    <label>Telefone <input name="telefone" maxlength="15" placeholder="(49) 99999-0000"></label>
+                    <label>E-mail <input name="email" type="email" maxlength="100"></label>
+                    <div class="linha-form">
+                        <button class="botao" type="submit">Salvar cadastro</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ---------- LOG DE API ---------- -->
+        <section class="aba-conteudo oculto" data-tela="api">
+            <div class="cabecalho-secao">
+                <div>
+                    <h2>Chamadas à API</h2>
+                    <p>Histórico das requisições feitas por esta tela, na ordem em que aconteceram.</p>
+                </div>
+                <div class="acoes">
+                    <button id="btnLimparLog" class="botao pequeno secundario" type="button">Limpar histórico</button>
+                </div>
+            </div>
+            <div id="listaLog" class="lista-log">
+                <p class="vazio">Nenhuma chamada registrada ainda.</p>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<footer class="rodape">
+    <span>Projeto acadêmico · Spring Boot + JWT + JPA + JasperReports</span>
+    <span>Dados de demonstração recriados a cada inicialização do perfil <code>dev</code>.</span>
+</footer>
+
+<div id="toast" class="toast oculto" role="status"></div>
+
+<script src="/app/app.js"></script>
+</body>
+</html>

@@ -31,6 +31,12 @@ public class Cliente implements java.io.Serializable {
     @Column(name = "cpf", nullable = false, unique = true, length = 11)
     private String cpf;
 
+    @Column(name = "telefone", length = 15)
+    private String telefone;
+
+    @Column(name = "email", length = 100)
+    private String email;
+
     @ToString.Exclude
     @OneToOne
     @JoinColumn(name = "id_usuario", nullable = false, unique = true)

@@ -25,6 +25,9 @@ public class Bicicleta implements java.io.Serializable {
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "codigo", nullable = false, unique = true, length = 20)
+    private String codigo;
+
     @Column(name = "marca", nullable = false, length = 50)
     private String marca;
 
@@ -37,6 +40,10 @@ public class Bicicleta implements java.io.Serializable {
     @Column(name = "aro", nullable = false)
     private Integer aro;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private Status status = Status.DISPONIVEL;
+
     @CreatedDate
     private LocalDateTime dataCriacao;
     @LastModifiedDate
@@ -45,6 +52,10 @@ public class Bicicleta implements java.io.Serializable {
     private String criadoPor;
     @LastModifiedBy
     private String modificadoPor;
+
+    public enum Status {
+        DISPONIVEL, ALUGADA, MANUTENCAO
+    }
 
     @Override
     public boolean equals(Object obj) {

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport name="locacoes" language="java" pageWidth="842" pageHeight="595" orientation="Landscape"
+              columnWidth="782" leftMargin="30" rightMargin="30" topMargin="30" bottomMargin="30"
+              uuid="6f1c2a54-6b0e-4a1e-9c3b-2f5e1d9a7c41">
+
+    <style name="Base" default="true" fontName="SansSerif" fontSize="9.0"/>
+    <style name="Titulo" fontSize="18.0" bold="true"/>
+    <style name="Subtitulo" fontSize="9.0" italic="true"/>
+    <style name="Cabecalho" mode="Opaque" forecolor="#FFFFFF" backcolor="#1F2937" fontSize="9.0" bold="true" vTextAlign="Middle"/>
+    <style name="Celula" fontSize="8.0" vTextAlign="Middle"/>
+    <style name="Valor" fontSize="8.0" vTextAlign="Middle" hTextAlign="Right"/>
+
+    <parameter name="GERADO_EM" class="java.lang.String"/>
+
+    <field name="nomeCliente" class="java.lang.String"/>
+    <field name="codigoBicicleta" class="java.lang.String"/>
+    <field name="dataRetirada" class="java.lang.String"/>
+    <field name="previsaoDevolucao" class="java.lang.String"/>
+    <field name="devolucaoEfetiva" class="java.lang.String"/>
+    <field name="duracao" class="java.lang.String"/>
+    <field name="valor" class="java.lang.String"/>
+    <field name="status" class="java.lang.String"/>
+
+    <title height="70">
+        <element kind="staticText" uuid="a1b2c3d4-0001-4000-8000-000000000001" x="0" y="0" width="520" height="30" style="Titulo">
+            <text><![CDATA[Locabike - Relatório de Locações]]></text>
+        </element>
+        <element kind="staticText" uuid="a1b2c3d4-0001-4000-8000-000000000002" x="0" y="30" width="520" height="20" style="Subtitulo">
+            <text><![CDATA[Relação de todas as locações e devoluções registradas no sistema]]></text>
+        </element>
+        <element kind="textField" uuid="a1b2c3d4-0001-4000-8000-000000000003" x="520" y="30" width="262" height="20" hTextAlign="Right">
+            <expression><![CDATA["Gerado em " + $P{GERADO_EM}]]></expression>
+        </element>
+        <element kind="line" uuid="a1b2c3d4-0001-4000-8000-000000000004" x="0" y="56" width="782" height="1" forecolor="#1F2937"/>
+    </title>
+
+    <columnHeader height="24">
+        <element kind="staticText" uuid="a1b2c3d4-0002-4000-8000-000000000001" x="0" y="0" width="180" height="24" style="Cabecalho">
+            <text><![CDATA[Cliente]]></text>
+            <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+        </element>
+        <element kind="staticText" uuid="a1b2c3d4-0002-4000-8000-000000000002" x="180" y="0" width="80" height="24" style="Cabecalho">
+            <text><![CDATA[Bicicleta]]></text>
+            <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+        </element>
+        <element kind="staticText" uuid="a1b2c3d4-0002-4000-8000-000000000003" x="260" y="0" width="105" height="24" style="Cabecalho">
+            <text><![CDATA[Retirada]]></text>
+            <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+        </element>
+        <element kind="staticText" uuid="a1b2c3d4-0002-4000-8000-000000000004" x="365" y="0" width="105" height="24" style="Cabecalho">
+            <text><![CDATA[Previsão]]></text>
+            <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+        </element>
+        <element kind="staticText" uuid="a1b2c3d4-0002-4000-8000-000000000005" x="470" y="0" width="105" height="24" style="Cabecalho">
+            <text><![CDATA[Devolução]]></text>
+            <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+        </element>
+        <element kind="staticText" uuid="a1b2c3d4-0002-4000-8000-000000000006" x="575" y="0" width="65" height="24" style="Cabecalho">
+            <text><![CDATA[Duração]]></text>
+            <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+        </element>
+        <element kind="staticText" uuid="a1b2c3d4-0002-4000-8000-000000000007" x="640" y="0" width="72" height="24" style="Cabecalho">
+            <text><![CDATA[Valor]]></text>
+            <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+        </element>
+        <element kind="staticText" uuid="a1b2c3d4-0002-4000-8000-000000000008" x="712" y="0" width="70" height="24" style="Cabecalho">
+            <text><![CDATA[Status]]></text>
+            <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+        </element>
+    </columnHeader>
+
+    <detail>
+        <band height="20">
+            <element kind="textField" uuid="a1b2c3d4-0003-4000-8000-000000000001" x="0" y="0" width="180" height="20" style="Celula">
+                <expression><![CDATA[$F{nomeCliente}]]></expression>
+                <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+            </element>
+            <element kind="textField" uuid="a1b2c3d4-0003-4000-8000-000000000002" x="180" y="0" width="80" height="20" style="Celula">
+                <expression><![CDATA[$F{codigoBicicleta}]]></expression>
+                <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+            </element>
+            <element kind="textField" uuid="a1b2c3d4-0003-4000-8000-000000000003" x="260" y="0" width="105" height="20" style="Celula">
+                <expression><![CDATA[$F{dataRetirada}]]></expression>
+                <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+            </element>
+            <element kind="textField" uuid="a1b2c3d4-0003-4000-8000-000000000004" x="365" y="0" width="105" height="20" style="Celula">
+                <expression><![CDATA[$F{previsaoDevolucao}]]></expression>
+                <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+            </element>
+            <element kind="textField" uuid="a1b2c3d4-0003-4000-8000-000000000005" x="470" y="0" width="105" height="20" style="Celula">
+                <expression><![CDATA[$F{devolucaoEfetiva}]]></expression>
+                <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+            </element>
+            <element kind="textField" uuid="a1b2c3d4-0003-4000-8000-000000000006" x="575" y="0" width="65" height="20" style="Celula">
+                <expression><![CDATA[$F{duracao}]]></expression>
+                <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+            </element>
+            <element kind="textField" uuid="a1b2c3d4-0003-4000-8000-000000000007" x="640" y="0" width="72" height="20" style="Valor">
+                <expression><![CDATA[$F{valor}]]></expression>
+                <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+            </element>
+            <element kind="textField" uuid="a1b2c3d4-0003-4000-8000-000000000008" x="712" y="0" width="70" height="20" style="Celula">
+                <expression><![CDATA[$F{status}]]></expression>
+                <box leftPadding="4" rightPadding="4"><pen lineWidth="0.5"/></box>
+            </element>
+        </band>
+    </detail>
+
+    <pageFooter height="20">
+        <element kind="line" uuid="a1b2c3d4-0004-4000-8000-000000000001" x="0" y="0" width="782" height="1"/>
+        <element kind="staticText" uuid="a1b2c3d4-0004-4000-8000-000000000002" x="0" y="2" width="300" height="16" fontSize="8.0">
+            <text><![CDATA[Locabike - Sistema de aluguel de bicicletas]]></text>
+        </element>
+        <element kind="textField" uuid="a1b2c3d4-0004-4000-8000-000000000003" x="600" y="2" width="182" height="16" fontSize="8.0" hTextAlign="Right">
+            <expression><![CDATA["Página " + String.valueOf($V{PAGE_NUMBER})]]></expression>
+        </element>
+    </pageFooter>
+
+</jasperReport>

@@ -40,15 +40,15 @@ public class DevDataSeeder implements CommandLineRunner {
         Usuario clienteAna = criarUsuario("ana@bikes.com", Usuario.Role.ROLE_CLIENTE);
         Usuario clienteBruno = criarUsuario("bruno@bikes.com", Usuario.Role.ROLE_CLIENTE);
 
-        criarCliente("Ana Souza", "52998224725", clienteAna);
-        criarCliente("Bruno Lima", "11144477735", clienteBruno);
+        criarCliente("Ana Souza", "52998224725", "(49) 99911-2233", "ana@bikes.com", clienteAna);
+        criarCliente("Bruno Lima", "11144477735", "(49) 98844-5566", "bruno@bikes.com", clienteBruno);
 
-        criarBicicleta("Caloi", "Elite Carbon", "Preta", 29);
-        criarBicicleta("Specialized", "Rockhopper", "Vermelha", 29);
-        criarBicicleta("Trek", "Marlin 7", "Azul", 29);
-        criarBicicleta("Sense", "Move Urban", "Cinza", 28);
-        criarBicicleta("Oggi", "Hacker Sport", "Verde", 29);
-        criarBicicleta("Cannondale", "Trail SE", "Laranja", 27);
+        criarBicicleta("BK-001", "Caloi", "Elite Carbon", "Preta", 29, Bicicleta.Status.DISPONIVEL);
+        criarBicicleta("BK-002", "Specialized", "Rockhopper", "Vermelha", 29, Bicicleta.Status.DISPONIVEL);
+        criarBicicleta("BK-003", "Trek", "Marlin 7", "Azul", 29, Bicicleta.Status.DISPONIVEL);
+        criarBicicleta("BK-004", "Sense", "Move Urban", "Cinza", 28, Bicicleta.Status.DISPONIVEL);
+        criarBicicleta("BK-005", "Oggi", "Hacker Sport", "Verde", 29, Bicicleta.Status.DISPONIVEL);
+        criarBicicleta("BK-006", "Cannondale", "Trail SE", "Laranja", 27, Bicicleta.Status.MANUTENCAO);
 
         log.info("Dados de demonstracao criados. ADMIN: {} | CLIENTE: {} | senha: 123456",
                 admin.getUsername(), clienteAna.getUsername());
@@ -62,20 +62,24 @@ public class DevDataSeeder implements CommandLineRunner {
         return usuarioRepository.save(usuario);
     }
 
-    private void criarCliente(String nome, String cpf, Usuario usuario) {
+    private void criarCliente(String nome, String cpf, String telefone, String email, Usuario usuario) {
         Cliente cliente = new Cliente();
         cliente.setNome(nome);
         cliente.setCpf(cpf);
+        cliente.setTelefone(telefone);
+        cliente.setEmail(email);
         cliente.setUsuario(usuario);
         clienteRepository.save(cliente);
     }
 
-    private void criarBicicleta(String marca, String modelo, String cor, Integer aro) {
+    private void criarBicicleta(String codigo, String marca, String modelo, String cor, Integer aro, Bicicleta.Status status) {
         Bicicleta bicicleta = new Bicicleta();
+        bicicleta.setCodigo(codigo);
         bicicleta.setMarca(marca);
         bicicleta.setModelo(modelo);
         bicicleta.setCor(cor);
         bicicleta.setAro(aro);
+        bicicleta.setStatus(status);
         bicicletaRepository.save(bicicleta);
     }
 }

@@ -2,6 +2,7 @@ package br.edu.ifc.bikes.web.controller;
 
 import br.edu.ifc.bikes.dto.BicicletaRequestDTO;
 import br.edu.ifc.bikes.dto.BicicletaResponseDTO;
+import br.edu.ifc.bikes.entity.Bicicleta;
 import br.edu.ifc.bikes.service.BicicletaService;
 import br.edu.ifc.bikes.web.exception.ErrorMessage;
 import io.swagger.v3.oas.annotations.Operation;
@@ -57,6 +58,33 @@ public class BicicletaController {
     @PreAuthorize("hasAnyRole('ADMIN', 'CLIENTE')")
     public ResponseEntity<BicicletaResponseDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(bicicletaService.getById(id));
+    }
+
+    @Operation(summary = "Recuperar uma bicicleta pelo código", description = "Recuperar uma bicicleta pelo código único. Qualquer usuário autenticado. Requer token Bearer.",
+            security = @SecurityRequirement(name = "security"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Recurso recuperado com sucesso",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = BicicletaResponseDTO.class))),
+                    @ApiResponse(responseCode = "404", description = "Recurso não encontrado",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+            })
+    @GetMapping("/codigo/{codigo}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENTE')")
+    public ResponseEntity<BicicletaResponseDTO> getByCodigo(@PathVariable String codigo) {
+        return ResponseEntity.ok(bicicletaService.getByCodigo(codigo));
+    }
+
+    @Operation(summary = "Listar bicicletas por status", description = "Listar bicicletas por status (DISPONIVEL, ALUGADA ou MANUTENCAO). Qualquer usuário autenticado. Requer token Bearer.",
+            security = @SecurityRequirement(name = "security"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista de bicicletas no status informado",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = BicicletaResponseDTO.class))))
+            })
+    @GetMapping("/status/{status}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENTE')")
+    public ResponseEntity<List<BicicletaResponseDTO>> getByStatus(@PathVariable Bicicleta.Status status) {
+        return ResponseEntity.ok(bicicletaService.getByStatus(status));
     }
 
     @Operation(summary = "Listar todas as bicicletas", description = "Listar todas as bicicletas. Qualquer usuário autenticado. Requer token Bearer.",
