@@ -23,6 +23,11 @@ java -jar target/bikes-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 - Swagger: <http://localhost:8080/docs-bikes.html>
 - Console H2: <http://localhost:8080/h2-console> (`jdbc:h2:mem:bikes`, usuário `sa`)
 
+> Se a porta 8080 estiver reservada por outro serviço da máquina (acontece em ambientes
+> com WSL/Docker usando `portproxy`), rode com `--server.port=8081` e use
+> <http://localhost:8081/>. Exemplo:
+> `java -jar target/bikes-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev --server.port=8081`.
+
 ### Contas de demonstração
 
 | Perfil  | Usuário           | Senha    |
