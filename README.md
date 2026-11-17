@@ -1,8 +1,11 @@
+[![CI/CD](https://github.com/alberthydev/bikes/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/alberthydev/bikes/actions/workflows/ci-cd.yml)
+
 > **Entrega do projeto:** o passo a passo deste README é o tutorial de implementação.
 > O que foi acrescentado para atender às demandas do projeto (locações, devoluções,
 > relatório em PDF e interface de demonstração) está em
 > [IMPLEMENTACAO.md](IMPLEMENTACAO.md), com endpoints, regras de negócio, contas de
-> demonstração e instruções para executar.
+> demonstração e instruções para executar. Para rodar ou publicar com Docker, veja
+> [DOCKER.md](DOCKER.md).
 
 ### Documentação com SpringDoc OpenAPI 3.1 e Swagger 3
 

@@ -1,0 +1,25 @@
+name: bikes
+
+services:
+  app:
+    image: ghcr.io/alberthydev/bikes:latest
+    build:
+      context: .
+    ports:
+      - "${BIKES_PORT:-8080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    restart: unless-stopped
+
+# Para usar MySQL em vez do H2 em memoria, rode o banco e aponte a aplicacao:
+#
+#   docker run -d --name bikes-mysql -e MYSQL_ROOT_PASSWORD=root \
+#     -e MYSQL_DATABASE=bikes -p 3306:3306 mysql:8.4
+#
+#   docker run -d --name bikes -p 8080:8080 \
+#     --add-host=host.docker.internal:host-gateway \
+#     -e SPRING_PROFILES_ACTIVE=prod \
+#     -e SPRING_DATASOURCE_URL='jdbc:mysql://host.docker.internal:3306/bikes?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo' \
+#     -e SPRING_DATASOURCE_USERNAME=root \
+#     -e SPRING_DATASOURCE_PASSWORD=root \
+#     ghcr.io/alberthydev/bikes:latest

@@ -28,6 +28,18 @@ java -jar target/bikes-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 > <http://localhost:8081/>. Exemplo:
 > `java -jar target/bikes-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev --server.port=8081`.
 
+### Docker
+
+```bash
+docker compose up --build
+```
+
+A imagem usa build multi-stage (JDK para compilar, JRE Alpine para executar), roda como
+usuário sem privilégio e já sobe com o perfil `dev`. O workflow
+`.github/workflows/ci-cd.yml` executa os testes e publica a imagem multi-arquitetura em
+`ghcr.io/alberthydev/bikes`. Detalhes, variáveis de ambiente e uso com MySQL em
+[DOCKER.md](DOCKER.md).
+
 ### Contas de demonstração
 
 | Perfil  | Usuário           | Senha    |

@@ -1,0 +1,16 @@
+.git
+.github
+.archify
+.idea
+.vscode
+target
+*.log
+HELP.md
+sobre.md
+README.md
+IMPLEMENTACAO.md
+DOCKER.md
+LICENSE
+compose.yaml
+Dockerfile
+.dockerignore
