@@ -76,31 +76,36 @@ Só é possível alugar se o usuário autenticado possuir um cadastro de cliente
 | Método | Caminho                            | Permissão        |
 |--------|------------------------------------|------------------|
 | POST   | `/api/v1/bicicletas`               | ADMIN            |
-| GET    | `/api/v1/bicicletas`               | ADMIN/CLIENTE    |
-| GET    | `/api/v1/bicicletas/{id}`          | ADMIN/CLIENTE    |
-| GET    | `/api/v1/bicicletas/codigo/{codigo}` | ADMIN/CLIENTE  |
-| GET    | `/api/v1/bicicletas/status/{status}` | ADMIN/CLIENTE  |
+| GET    | `/api/v1/bicicletas`               | ADMIN            |
+| GET    | `/api/v1/bicicletas/{id}`          | ADMIN            |
+| GET    | `/api/v1/bicicletas/codigo/{codigo}` | ADMIN          |
+| GET    | `/api/v1/bicicletas/status/{status}` | ADMIN          |
 | PUT    | `/api/v1/bicicletas/{id}`          | ADMIN            |
 | DELETE | `/api/v1/bicicletas/{id}`          | ADMIN            |
+
+O recurso Bicicleta é restrito ao administrador, como pede o PDF. O cliente não consulta
+bicicletas diretamente: para escolher uma bicicleta na locação ele usa
+`GET /api/v1/locacoes/bicicletas-disponiveis`, que devolve apenas as `DISPONIVEL`.
 
 ### Clientes
 
 | Método | Caminho                 | Permissão                     |
 |--------|-------------------------|-------------------------------|
-| POST   | `/api/v1/clientes`      | autenticado (cria o próprio)  |
+| POST   | `/api/v1/clientes`      | CLIENTE (cria o próprio)      |
 | GET    | `/api/v1/clientes`      | ADMIN                         |
 | GET    | `/api/v1/clientes/{id}` | ADMIN ou o próprio cliente    |
 
 ### Locações
 
-| Método | Caminho                            | Permissão                          |
-|--------|------------------------------------|------------------------------------|
-| POST   | `/api/v1/locacoes`                 | CLIENTE                            |
-| GET    | `/api/v1/locacoes`                 | ADMIN                              |
-| GET    | `/api/v1/locacoes/minhas`          | CLIENTE                            |
-| GET    | `/api/v1/locacoes/{id}`            | ADMIN ou o dono da locação         |
-| POST   | `/api/v1/locacoes/{id}/devolucao`  | ADMIN ou o dono da locação         |
-| GET    | `/api/v1/locacoes/relatorio`       | ADMIN (resposta `application/pdf`) |
+| Método | Caminho                                     | Permissão                          |
+|--------|---------------------------------------------|------------------------------------|
+| POST   | `/api/v1/locacoes`                          | CLIENTE                            |
+| GET    | `/api/v1/locacoes`                          | ADMIN                              |
+| GET    | `/api/v1/locacoes/minhas`                   | CLIENTE                            |
+| GET    | `/api/v1/locacoes/bicicletas-disponiveis`   | ADMIN/CLIENTE                      |
+| GET    | `/api/v1/locacoes/{id}`                     | ADMIN ou o dono da locação         |
+| POST   | `/api/v1/locacoes/{id}/devolucao`           | ADMIN ou o dono da locação         |
+| GET    | `/api/v1/locacoes/relatorio`                | ADMIN (resposta `application/pdf`) |
 
 #### Exemplo de solicitação
 
@@ -161,15 +166,39 @@ servida pelo próprio Spring:
 - **Chamadas à API**: histórico com método, caminho, status, tempo e corpos enviados/recebidos,
   para evidenciar o funcionamento de cada endpoint durante a apresentação.
 
+## Aderência às demandas do PDF
+
+Checklist dos requisitos da descrição do projeto:
+
+| Requisito | Onde está atendido |
+|-----------|--------------------|
+| Timezone do país | `SpringTimezoneConfig` (`America/Sao_Paulo`) + `spring.jackson.time-zone` |
+| Locale do país | `spring.web.locale=pt_BR` e `spring.jackson.locale=pt_BR` |
+| Auditoria (criação/modificação e usuário) | `@CreatedDate`/`@LastModifiedDate`/`@CreatedBy`/`@LastModifiedBy` em todas as entidades + `SpringJpaAuditingConfig` |
+| Base de dados de desenvolvimento | Perfil `dev` com H2 em memória; MySQL como padrão |
+| Usuário: e-mail único, senha de 6, perfis, cadastro público, busca por id, troca de senha, listagem admin | `UsuarioController`/`UsuarioService` + `UsuarioIT`/`UsuarioSenhaIT` |
+| Cliente: nome, CPF único, vínculo 1:1 com usuário, cadastro só pelo cliente, consulta própria/admin | `ClienteController`/`ClienteService` + `ClienteIT` |
+| Bicicleta: código único, status livre/ocupada/manutenção, busca por código, ações só admin | `BicicletaController` (ADMIN) + `BicicletaIT` |
+| Locação: solicitação, verificação de disponibilidade, cartão, retirada, previsão e devolução efetiva, sem duas locações simultâneas | `LocacaoService` (`buscarParaLocacao` com lock pessimista) + `LocacaoIT` |
+| Devolução: data efetiva, tempo/valor, bicicleta livre, manutenção em caso de problema | `LocacaoService.devolver` + `LocacaoIT` |
+| Relatório: cliente, bicicleta, retirada/devolução, duração e status | `reports/locacoes.jrxml` + `JasperService` |
+
+Observações sobre o modelo de dados:
+
+- O diagrama mostra `data_devolucao`; o requisito 6 pede **previsão** e **devolução efetiva**,
+  por isso a locação tem `previsao_devolucao` e `devolucao_efetiva`.
+- A coluna de vínculo do cliente chama-se `id_usuario` (o diagrama usa `usuario_id`); o
+  mapeamento JPA é o mesmo e o nome foi mantido para não quebrar bancos já criados.
+
 ## Testes
 
-`.\mvnw.cmd verify` executa 44 testes de integração:
+`.\mvnw.cmd verify` executa 47 testes de integração:
 
 | Classe          | Testes | Cobertura resumida                                              |
 |-----------------|--------|-----------------------------------------------------------------|
-| `BicicletaIT`   | 7      | cadastro, código único, validação, permissões, busca, status     |
-| `ClienteIT`     | 6      | cadastro com telefone/e-mail, CPF único, validação, permissões   |
-| `LocacaoIT`     | 16     | criação, conflitos, devolução, cálculo do valor, relatório, PDF  |
+| `BicicletaIT`   | 8      | cadastro, código único, validação, permissões, busca, status     |
+| `ClienteIT`     | 7      | cadastro com telefone/e-mail, CPF único, validação, permissões   |
+| `LocacaoIT`     | 17     | criação, conflitos, devolução, cálculo do valor, relatório, PDF  |
 | `UsuarioIT`     | 10     | recursos de usuário existentes                                   |
 | `UsuarioSenhaIT`| 5      | alteração de senha existente                                     |
 

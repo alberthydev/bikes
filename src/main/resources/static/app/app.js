@@ -141,6 +141,8 @@ function aplicarUsuarioNoTopo() {
     selo.textContent = role;
     selo.className = `selo ${role === 'ADMIN' ? '' : 'cliente'}`;
     $('#usuario').classList.remove('oculto');
+    // O recurso Bicicleta e restrito ao admin no PDF, entao a aba nao aparece para o cliente.
+    $('#abas [data-aba="bicicletas"]').classList.toggle('oculto', role !== 'ADMIN');
 }
 
 function encerrarSessao(mostrarAviso = true) {
@@ -333,7 +335,7 @@ async function carregarSelectBicicletas() {
         previsao.value = paraInputLocal(new Date(Date.now() + 2 * 60 * 60 * 1000));
     }
     try {
-        const disponiveis = await api('GET', '/api/v1/bicicletas/status/DISPONIVEL');
+        const disponiveis = await api('GET', '/api/v1/locacoes/bicicletas-disponiveis');
         select.innerHTML = disponiveis.length
             ? disponiveis.map(b => `<option value="${b.id}">${esc(b.codigo)} · ${esc(b.marca)} ${esc(b.modelo)}</option>`).join('')
             : '<option value="">Nenhuma bicicleta disponível</option>';

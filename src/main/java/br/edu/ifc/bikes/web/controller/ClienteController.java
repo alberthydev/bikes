@@ -30,17 +30,20 @@ public class ClienteController {
 
     private final ClienteService clienteService;
 
-    @Operation(summary = "Criar um novo cliente", description = "Recurso para criar um novo cliente associado ao usuário autenticado. Requer token Bearer.",
+    @Operation(summary = "Criar um novo cliente", description = "Recurso para criar um novo cliente associado ao usuário autenticado. Somente o perfil CLIENTE pode se cadastrar. Requer token Bearer.",
             security = @SecurityRequirement(name = "security"),
             responses = {
                     @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ClienteResponseDTO.class))),
+                    @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar este recurso",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
                     @ApiResponse(responseCode = "409", description = "CPF já cadastrado ou usuário já possui cliente",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
                     @ApiResponse(responseCode = "422", description = "Recurso não processado por dados de entrada inválidos",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
             })
     @PostMapping
+    @PreAuthorize("hasRole('CLIENTE')")
     public ResponseEntity<ClienteResponseDTO> create(@Valid @RequestBody ClienteRequestDTO cliente,
                                                      @AuthenticationPrincipal JwtUserDetails userDetails) {
         ClienteResponseDTO clienteCriado = clienteService.create(cliente, userDetails.getId());

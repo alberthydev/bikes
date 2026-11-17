@@ -99,11 +99,31 @@ class BicicletaIT extends IntegrationTestSupport {
     }
 
     @Test
+    void buscarBicicletas_ClienteAutenticado_RetornaStatus403() {
+        String token = tokenFor(CLIENTE, SENHA);
+
+        testClient.get().uri("/api/v1/bicicletas")
+                .headers(h -> h.setBearerAuth(token))
+                .exchange()
+                .expectStatus().isForbidden();
+
+        testClient.get().uri("/api/v1/bicicletas/codigo/bk-400")
+                .headers(h -> h.setBearerAuth(token))
+                .exchange()
+                .expectStatus().isForbidden();
+
+        testClient.get().uri("/api/v1/bicicletas/status/DISPONIVEL")
+                .headers(h -> h.setBearerAuth(token))
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    @Test
     void buscarBicicleta_PorCodigo_RetornaBicicleta() {
         BicicletaResponseDTO body = testClient
                 .get()
                 .uri("/api/v1/bicicletas/codigo/bk-400")
-                .headers(h -> h.setBearerAuth(tokenFor(CLIENTE, SENHA)))
+                .headers(h -> h.setBearerAuth(tokenFor(ADMIN, SENHA)))
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(BicicletaResponseDTO.class)
@@ -131,7 +151,7 @@ class BicicletaIT extends IntegrationTestSupport {
         BicicletaResponseDTO[] body = testClient
                 .get()
                 .uri("/api/v1/bicicletas/status/MANUTENCAO")
-                .headers(h -> h.setBearerAuth(tokenFor(CLIENTE, SENHA)))
+                .headers(h -> h.setBearerAuth(tokenFor(ADMIN, SENHA)))
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(BicicletaResponseDTO[].class)

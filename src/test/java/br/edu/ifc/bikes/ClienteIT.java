@@ -78,6 +78,19 @@ class ClienteIT extends IntegrationTestSupport {
     }
 
     @Test
+    void criarCliente_Admin_RetornaStatus403() {
+        testClient
+                .post()
+                .uri("/api/v1/clientes")
+                .headers(h -> h.setBearerAuth(tokenFor(ADMIN, SENHA)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new ClienteRequestDTO("Admin Teste", "52998224725",
+                        "(49) 90000-0000", "admin.teste@teste.com"))
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    @Test
     void buscarCliente_ProprioCadastro_RetornaCliente() {
         ClienteResponseDTO body = testClient
                 .get()

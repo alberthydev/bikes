@@ -65,6 +65,37 @@ class LocacaoIT extends IntegrationTestSupport {
     }
 
     @Test
+    void listarBicicletasDisponiveis_Cliente_RetornaSomenteDisponiveis() {
+        BicicletaResponseDTO[] antes = testClient
+                .get()
+                .uri("/api/v1/locacoes/bicicletas-disponiveis")
+                .headers(h -> h.setBearerAuth(tokenFor(ANA, SENHA)))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(BicicletaResponseDTO[].class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(antes).isNotNull();
+        assertThat(antes).hasSize(1);
+        assertThat(antes[0].codigo()).isEqualTo("BK-400");
+
+        criarLocacao(ANA, BIKE_DISPONIVEL);
+
+        BicicletaResponseDTO[] depois = testClient
+                .get()
+                .uri("/api/v1/locacoes/bicicletas-disponiveis")
+                .headers(h -> h.setBearerAuth(tokenFor(ANA, SENHA)))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(BicicletaResponseDTO[].class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(depois).isNotNull().isEmpty();
+    }
+
+    @Test
     void criarLocacao_BicicletaJaAlugada_RetornaErrorMessageStatus409() {
         String token = tokenFor(ANA, SENHA);
         criarLocacao(ANA, BIKE_DISPONIVEL);

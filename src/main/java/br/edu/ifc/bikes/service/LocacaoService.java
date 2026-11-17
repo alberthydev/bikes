@@ -1,7 +1,9 @@
 package br.edu.ifc.bikes.service;
 
+import br.edu.ifc.bikes.dto.BicicletaResponseDTO;
 import br.edu.ifc.bikes.dto.LocacaoRequestDTO;
 import br.edu.ifc.bikes.dto.LocacaoResponseDTO;
+import br.edu.ifc.bikes.dto.mapper.BicicletaMapper;
 import br.edu.ifc.bikes.dto.mapper.LocacaoMapper;
 import br.edu.ifc.bikes.entity.Bicicleta;
 import br.edu.ifc.bikes.entity.Cliente;
@@ -31,6 +33,7 @@ public class LocacaoService {
     private final ClienteRepository clienteRepository;
     private final BicicletaRepository bicicletaRepository;
     private final LocacaoMapper locacaoMapper;
+    private final BicicletaMapper bicicletaMapper;
 
     /**
      * Cria a solicitacao de aluguel do cliente autenticado.
@@ -117,6 +120,15 @@ public class LocacaoService {
 
     public boolean pertenceAoUsuario(Long locacaoId, Long usuarioId) {
         return locacaoRepository.existsByIdAndClienteUsuarioId(locacaoId, usuarioId);
+    }
+
+    /**
+     * Bicicletas que o cliente pode escolher ao solicitar uma locacao.
+     * O recurso Bicicleta continua restrito ao admin; esta lista faz parte do fluxo de locacao.
+     */
+    @Transactional
+    public List<BicicletaResponseDTO> bicicletasDisponiveis() {
+        return bicicletaMapper.toResponse(bicicletaRepository.findAllByStatus(Bicicleta.Status.DISPONIVEL));
     }
 
     @Transactional

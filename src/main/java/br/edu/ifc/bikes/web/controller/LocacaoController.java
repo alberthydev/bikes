@@ -1,5 +1,6 @@
 package br.edu.ifc.bikes.web.controller;
 
+import br.edu.ifc.bikes.dto.BicicletaResponseDTO;
 import br.edu.ifc.bikes.dto.DevolucaoRequestDTO;
 import br.edu.ifc.bikes.dto.LocacaoRequestDTO;
 import br.edu.ifc.bikes.dto.LocacaoResponseDTO;
@@ -85,6 +86,19 @@ public class LocacaoController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "inline; filename=locacoes-" + System.currentTimeMillis() + ".pdf")
                 .body(pdf);
+    }
+
+    @Operation(summary = "Listar as bicicletas disponíveis para locação", description = "Lista apenas as bicicletas com status DISPONIVEL, para o cliente escolher na solicitação. Requer token Bearer.",
+            security = @SecurityRequirement(name = "security"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista de bicicletas disponíveis",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = BicicletaResponseDTO.class))))
+            })
+    @GetMapping("/bicicletas-disponiveis")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENTE')")
+    public ResponseEntity<List<BicicletaResponseDTO>> bicicletasDisponiveis() {
+        return ResponseEntity.ok(locacaoService.bicicletasDisponiveis());
     }
 
     @Operation(summary = "Listar as locações do cliente autenticado", description = "Listar as locações do cliente autenticado. Requer token Bearer.",
