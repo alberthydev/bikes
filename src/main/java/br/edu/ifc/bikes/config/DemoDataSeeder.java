@@ -10,19 +10,22 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
- * Popula o banco H2 do perfil "dev" com dados prontos para a demonstracao.
- * Como o H2 esta em memoria, a carga acontece a cada inicializacao.
+ * Popula o banco com dados prontos para a demonstracao.
+ * <p>
+ * Roda quando {@code app.demo.data=true}: no perfil "dev" (H2 em memoria) e no
+ * compose com MySQL. Como so age quando a tabela de usuarios esta vazia, a carga
+ * e idempotente e nao sobrescreve dados de uma instalacao ja em uso.
  */
 @Slf4j
 @RequiredArgsConstructor
 @Component
-@Profile("dev")
-public class DevDataSeeder implements CommandLineRunner {
+@ConditionalOnProperty(name = "app.demo.data", havingValue = "true")
+public class DemoDataSeeder implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;
     private final ClienteRepository clienteRepository;

@@ -40,6 +40,23 @@ jobs:
     permissions:
       contents: read
       packages: write
+    services:
+      # O padrao do projeto e MySQL. O smoke test sobe a imagem contra este banco,
+      # entao o pipeline valida o mesmo caminho usado na entrega.
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: bikes
+          MYSQL_USER: bikes
+          MYSQL_PASSWORD: bikes
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
     steps:
       - uses: actions/checkout@v4
 
@@ -79,17 +96,28 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Smoke test da imagem
+      - name: Smoke test da imagem com MySQL
         env:
           IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           IMAGE="$(echo "$IMAGE_TAGS" | head -n1)"
-          trap 'docker logs bikes-smoke --tail 40; docker rm -f bikes-smoke' EXIT
-          docker run -d --name bikes-smoke -p 8080:8080 "$IMAGE"
-          for i in $(seq 1 30); do
+          trap 'docker logs bikes-smoke --tail 60; docker rm -f bikes-smoke' EXIT
+          # --network host faz o container enxergar o MySQL do job em 127.0.0.1:3306.
+          docker run -d --name bikes-smoke --network host \
+            -e SPRING_PROFILES_ACTIVE=prod \
+            -e SPRING_DATASOURCE_URL='jdbc:mysql://127.0.0.1:3306/bikes?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo' \
+            -e SPRING_DATASOURCE_USERNAME=bikes \
+            -e SPRING_DATASOURCE_PASSWORD=bikes \
+            -e APP_DEMO_DATA=true \
+            "$IMAGE"
+          for i in $(seq 1 45); do
             if curl -fsS http://localhost:8080/ > /tmp/bikes.html; then
               break
             fi
             sleep 2
           done
           grep -qi "Locabike" /tmp/bikes.html
+          curl -fsS -X POST http://localhost:8080/api/v1/auth \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"admin@bikes.com","password":"123456"}' \
+            | grep -q '"token"'

@@ -32,10 +32,11 @@ RUN apk add --no-cache fontconfig ttf-dejavu \
 WORKDIR /app
 COPY --from=build /build/target/bikes-*.jar /app/app.jar
 
-# O perfil dev usa H2 em memoria e ja sobe com dados de demonstracao.
-# Para MySQL, sobrescreva SPRING_PROFILES_ACTIVE e as variaveis spring.datasource.*.
+# Padrao do projeto: MySQL (perfil prod). O compose sobe o servidor MySQL e
+# injeta SPRING_DATASOURCE_URL/USERNAME/PASSWORD e APP_DEMO_DATA=true.
+# Para rodar sem banco, use -e SPRING_PROFILES_ACTIVE=dev (H2 em memoria).
 ENV TZ=America/Sao_Paulo \
-    SPRING_PROFILES_ACTIVE=dev \
+    SPRING_PROFILES_ACTIVE=prod \
     SERVER_PORT=8080 \
     JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -Dfile.encoding=UTF-8"
 

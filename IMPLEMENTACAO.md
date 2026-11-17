@@ -34,11 +34,14 @@ java -jar target/bikes-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 docker compose up --build
 ```
 
-A imagem usa build multi-stage (JDK para compilar, JRE Alpine para executar), roda como
-usuário sem privilégio e já sobe com o perfil `dev`. O workflow
-`.github/workflows/ci-cd.yml` executa os testes e publica a imagem multi-arquitetura em
-`ghcr.io/alberthydev/bikes`. Detalhes, variáveis de ambiente e uso com MySQL em
-[DOCKER.md](DOCKER.md).
+O padrão do projeto é MySQL: o compose sobe a aplicação e um `mysql:8.4` com volume
+próprio, espera o banco ficar saudável e carrega os dados de demonstração na primeira
+inicialização. A imagem usa build multi-stage (JDK para compilar, JRE Alpine para executar)
+e roda como usuário sem privilégio. Para uma demonstração sem banco, use
+`docker compose -f compose.h2.yaml up --build` (H2 em memória, perfil `dev`). O workflow
+`.github/workflows/ci-cd.yml` executa os testes, publica a imagem multi-arquitetura em
+`ghcr.io/alberthydev/bikes` e faz o smoke test contra MySQL. Detalhes, variáveis de
+ambiente e uso sem compose em [DOCKER.md](DOCKER.md).
 
 ### Contas de demonstração
 
@@ -48,7 +51,9 @@ usuário sem privilégio e já sobe com o perfil `dev`. O workflow
 | CLIENTE | `ana@bikes.com`   | `123456` |
 | CLIENTE | `bruno@bikes.com` | `123456` |
 
-O perfil `dev` cria também as bicicletas `BK-001` a `BK-006` (a `BK-006` inicia em manutenção).
+O perfil `dev` (H2) e o compose com MySQL criam também as bicicletas `BK-001` a `BK-006`
+(a `BK-006` inicia em manutenção). No MySQL, a carga só ocorre se o banco estiver vazio e
+pode ser desligada com `APP_DEMO_DATA=false`.
 
 ## Modelo de dados
 

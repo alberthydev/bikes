@@ -1,0 +1,18 @@
+name: bikes-h2
+
+# Alternativa sem MySQL, util para demonstracoes rapidas: H2 em memoria e dados
+# de demonstracao recriados a cada inicializacao.
+#
+#   docker compose -f compose.h2.yaml up --build
+#
+# O padrao do projeto continua sendo o MySQL do compose.yaml.
+services:
+  app:
+    image: ghcr.io/alberthydev/bikes:latest
+    build:
+      context: .
+    ports:
+      - "${BIKES_PORT:-8080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    restart: unless-stopped
