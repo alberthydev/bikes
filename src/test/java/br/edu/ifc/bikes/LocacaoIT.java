@@ -117,6 +117,26 @@ class LocacaoIT extends IntegrationTestSupport {
     }
 
     @Test
+    void criarLocacao_BicicletaAlugadaPorOutroCliente_RetornaErrorMessageStatus409() {
+        criarLocacao(ANA, BIKE_DISPONIVEL);
+
+        ErrorMessage body = testClient
+                .post()
+                .uri("/api/v1/locacoes")
+                .headers(h -> h.setBearerAuth(tokenFor(JOAO, SENHA)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(novaSolicitacao(BIKE_DISPONIVEL))
+                .exchange()
+                .expectStatus().isEqualTo(409)
+                .expectBody(ErrorMessage.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(body).isNotNull();
+        assertThat(body.getStatus()).isEqualTo(409);
+    }
+
+    @Test
     void criarLocacao_BicicletaEmManutencao_RetornaErrorMessageStatus409() {
         testClient
                 .post()

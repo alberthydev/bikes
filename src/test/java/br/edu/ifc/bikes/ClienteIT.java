@@ -171,6 +171,33 @@ class ClienteIT extends IntegrationTestSupport {
                 .expectStatus().isForbidden();
     }
 
+    @Test
+    void listarClientes_ComAdmin_RetornaLista() {
+        ClienteResponseDTO[] body = testClient
+                .get()
+                .uri("/api/v1/clientes")
+                .headers(h -> h.setBearerAuth(tokenFor(ADMIN, SENHA)))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(ClienteResponseDTO[].class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(body).isNotNull();
+        assertThat(body).extracting(ClienteResponseDTO::nome)
+                .contains("Ana Teste", "Joao Teste");
+    }
+
+    @Test
+    void listarClientes_ComCliente_RetornaStatus403() {
+        testClient
+                .get()
+                .uri("/api/v1/clientes")
+                .headers(h -> h.setBearerAuth(tokenFor(CLIENTE, SENHA)))
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
     private String tokenDeNovoUsuario() {
         String username = "cliente.novo." + System.nanoTime() + "@teste.com";
         testClient
