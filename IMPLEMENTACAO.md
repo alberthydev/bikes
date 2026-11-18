@@ -110,6 +110,7 @@ bicicletas diretamente: para escolher uma bicicleta na locação ele usa
 |--------|-------------------------|-------------------------------|
 | POST   | `/api/v1/clientes`      | CLIENTE (cria o próprio)      |
 | GET    | `/api/v1/clientes`      | ADMIN                         |
+| GET    | `/api/v1/clientes/me`   | CLIENTE (o próprio cadastro)  |
 | GET    | `/api/v1/clientes/{id}` | ADMIN ou o próprio cliente    |
 
 ### Locações
@@ -157,6 +158,9 @@ O corpo é opcional; sem ele, assume-se `problema = false`.
 - **Usuário sem cadastro de cliente**: não pode alugar (**409**).
 - **Código de bicicleta duplicado / CPF duplicado**: **409**.
 - **Dados inválidos** (previsão no passado, cartão fora de 13–19 dígitos, CPF inválido): **422**.
+- **Perfil do usuário**: o cadastro público (`POST /api/v1/usuarios`) sempre cria `ROLE_CLIENTE`,
+  por segurança, para impedir auto-promoção a administrador. O perfil `ROLE_ADMIN` é criado
+  apenas por carga inicial (`DemoDataSeeder`) ou diretamente no banco de dados.
 
 ## Relatório de locações (JasperReports)
 
