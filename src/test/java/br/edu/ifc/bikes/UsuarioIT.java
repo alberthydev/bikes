@@ -2,8 +2,11 @@ package br.edu.ifc.bikes;
 
 import br.edu.ifc.bikes.dto.UsuarioRequestDTO;
 import br.edu.ifc.bikes.dto.UsuarioResponseDTO;
+import br.edu.ifc.bikes.entity.Usuario;
+import br.edu.ifc.bikes.repository.UsuarioRepository;
 import br.edu.ifc.bikes.web.exception.ErrorMessage;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.jdbc.Sql;
@@ -18,6 +21,23 @@ class UsuarioIT extends IntegrationTestSupport {
     private static final String ADMIN = "jose@gmail.com";
     private static final String CLIENTE = "maria@gmail.com";
     private static final String SENHA = "123456";
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Test
+    void criarUsuario_SemToken_GravaCriadoPorNulo() {
+        testClient
+                .post()
+                .uri("/api/v1/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UsuarioRequestDTO("fabio@gmail.com", "123456"))
+                .exchange()
+                .expectStatus().isCreated();
+
+        Usuario usuario = usuarioRepository.findByUsername("fabio@gmail.com").orElseThrow();
+        assertThat(usuario.getCriadoPor()).isNull();
+    }
 
     @Test
     void criarUsuario_DadosValidos_RetornaUsuarioCriado() {
