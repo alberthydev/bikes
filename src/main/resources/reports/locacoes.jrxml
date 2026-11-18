@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport name="locacoes" language="java" pageWidth="842" pageHeight="595" orientation="Landscape"
               columnWidth="782" leftMargin="30" rightMargin="30" topMargin="30" bottomMargin="30"
+              whenNoDataType="AllSectionsNoDetail"
               uuid="6f1c2a54-6b0e-4a1e-9c3b-2f5e1d9a7c41">
 
     <style name="Base" default="true" fontName="SansSerif" fontSize="9.0"/>
@@ -115,5 +116,11 @@
             <expression><![CDATA["Página " + String.valueOf($V{PAGE_NUMBER})]]></expression>
         </element>
     </pageFooter>
+
+    <summary height="30" printWhenExpression="$V{REPORT_COUNT} == 0">
+        <element kind="staticText" uuid="a1b2c3d4-0005-4000-8000-000000000001" x="0" y="8" width="782" height="20" style="Subtitulo" hTextAlign="Center">
+            <text><![CDATA[Nenhuma locação registrada até o momento.]]></text>
+        </element>
+    </summary>
 
 </jasperReport>
