@@ -11,6 +11,7 @@ import br.edu.ifc.bikes.exception.UsernameUniqueViolationException;
 import br.edu.ifc.bikes.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +30,7 @@ public class UsuarioService {
            Usuario usuario = usuarioMapper.toUsuario(usuarioRequestDTO);
            usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
            return usuarioMapper.toResponse(usuarioRepository.save(usuario));
-       } catch (RuntimeException ex) {
+       } catch (DataIntegrityViolationException ex) {
            throw new UsernameUniqueViolationException(String.format("O nome de usuario '%s' ja existe", usuarioRequestDTO.username()));
        }
     }
