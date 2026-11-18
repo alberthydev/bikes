@@ -126,6 +126,51 @@ class ClienteIT extends IntegrationTestSupport {
                 .expectStatus().isOk();
     }
 
+    @Test
+    void buscarMe_ClienteComCadastro_RetornaProprioCliente() {
+        ClienteResponseDTO body = testClient
+                .get()
+                .uri("/api/v1/clientes/me")
+                .headers(h -> h.setBearerAuth(tokenFor(CLIENTE, SENHA)))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(ClienteResponseDTO.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(body).isNotNull();
+        assertThat(body.id()).isEqualTo(300);
+        assertThat(body.nome()).isEqualTo("Ana Teste");
+    }
+
+    @Test
+    void buscarMe_ClienteSemCadastro_RetornaErrorMessageStatus404() {
+        String token = tokenDeNovoUsuario();
+
+        ErrorMessage body = testClient
+                .get()
+                .uri("/api/v1/clientes/me")
+                .headers(h -> h.setBearerAuth(token))
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ErrorMessage.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(body).isNotNull();
+        assertThat(body.getStatus()).isEqualTo(404);
+    }
+
+    @Test
+    void buscarMe_Admin_RetornaStatus403() {
+        testClient
+                .get()
+                .uri("/api/v1/clientes/me")
+                .headers(h -> h.setBearerAuth(tokenFor(ADMIN, SENHA)))
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
     private String tokenDeNovoUsuario() {
         String username = "cliente.novo." + System.nanoTime() + "@teste.com";
         testClient

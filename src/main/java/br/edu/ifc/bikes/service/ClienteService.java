@@ -56,6 +56,13 @@ public class ClienteService {
     }
 
     @Transactional
+    public ClienteResponseDTO getByUsuarioId(Long usuarioId) {
+        return clienteMapper.toResponse(clienteRepository.findByUsuarioId(usuarioId).orElseThrow(
+                () -> new EntityNotFoundException(String.format("Cliente do usuario id:%s nao encontrado", usuarioId))
+        ));
+    }
+
+    @Transactional
     public List<ClienteResponseDTO> getAll() {
         return clienteMapper.toResponse(clienteRepository.findAll());
     }

@@ -66,6 +66,22 @@ public class ClienteController {
         return ResponseEntity.ok(clienteService.getById(id));
     }
 
+    @Operation(summary = "Recuperar os dados do próprio cliente", description = "Recupera o cliente vinculado ao usuário autenticado. Somente o perfil CLIENTE pode acessar. Requer token Bearer.",
+            security = @SecurityRequirement(name = "security"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Recurso recuperado com sucesso",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ClienteResponseDTO.class))),
+                    @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar este recurso",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "404", description = "Cliente não encontrado para o usuário autenticado",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+            })
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<ClienteResponseDTO> getMe(@AuthenticationPrincipal JwtUserDetails userDetails) {
+        return ResponseEntity.ok(clienteService.getByUsuarioId(userDetails.getId()));
+    }
+
     @Operation(summary = "Listar todos os clientes", description = "Listar todos os clientes. Somente admin. Requer token Bearer.",
             security = @SecurityRequirement(name = "security"),
             responses = {
