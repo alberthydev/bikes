@@ -87,6 +87,7 @@
             <button type="button" class="aba" data-aba="bicicletas">Bicicletas</button>
             <button type="button" class="aba" data-aba="locacoes">Locações e devoluções</button>
             <button type="button" class="aba" data-aba="clientes">Clientes</button>
+            <button type="button" class="aba" data-aba="app">App</button>
             <button type="button" class="aba" data-aba="api">Chamadas à API</button>
         </nav>
 
@@ -238,6 +239,79 @@
             </div>
         </section>
 
+        <!-- ---------- APP ---------- -->
+        <section class="aba-conteudo oculto" data-tela="app">
+            <div class="cabecalho-secao">
+                <div>
+                    <h2>Aplicativo local</h2>
+                    <p>O celular não acessa a API: ele recebe a configuração por QR e devolve um código assinado, digitado aqui.</p>
+                </div>
+                <div class="acoes">
+                    <a class="botao secundario pequeno" href="/mobile/" target="_blank" rel="noopener">Abrir aplicativo</a>
+                </div>
+            </div>
+
+            <div class="app-grade">
+                <div class="cartao-form">
+                    <h3>1. Parear o celular</h3>
+                    <p class="dica">O QR leva o tema, o cliente de demonstração e um segredo válido por 30 minutos. A lista de bicicletas disponíveis vai junto.</p>
+                    <div class="grade-form">
+                        <label>Cliente da locação
+                            <select id="selectClienteApp">
+                                <option value="">Primeiro cliente cadastrado</option>
+                            </select>
+                        </label>
+                        <div class="linha-form">
+                            <button id="btnPareamento" class="botao" type="button">Gerar QR de pareamento</button>
+                        </div>
+                    </div>
+                    <div id="areaQrApp" class="qr-area oculto">
+                        <div id="qrApp" class="qr-codigo"></div>
+                        <div class="qr-info">
+                            <p><strong id="qrCliente"></strong></p>
+                            <p class="dica" id="qrValidade"></p>
+                            <label class="qr-payload-label">Texto do QR
+                                <textarea id="payloadApp" rows="4" readonly></textarea>
+                            </label>
+                            <button id="btnCopiarPayload" class="botao pequeno secundario" type="button">Copiar texto do QR</button>
+                        </div>
+                    </div>
+                    <p class="dica">Sem câmera? Copie o texto acima e cole na tela do aplicativo. No celular, a leitura do QR usa a câmera.</p>
+                </div>
+
+                <div class="cartao-form">
+                    <h3>2. Importar a locação do app</h3>
+                    <p class="dica">Digite o código de 36 caracteres gerado no aplicativo. Ele vale por 15 minutos e só pode ser usado uma vez.</p>
+                    <form id="formAppLocacao" class="grade-form">
+                        <label>Código gerado no aplicativo
+                            <input name="codigo" id="codigoApp" required autocomplete="off" spellcheck="false"
+                                   maxlength="41" placeholder="XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX">
+                        </label>
+                        <div class="linha-form">
+                            <button class="botao" type="submit">Registrar locação</button>
+                        </div>
+                    </form>
+                    <div id="resultadoApp" class="resultado-app oculto">
+                        <p><strong id="resultadoAppTitulo"></strong></p>
+                        <p class="dica" id="resultadoAppDetalhe"></p>
+                        <p class="rotulo-confirmacao">Confirmação para digitar no app</p>
+                        <p class="codigo-confirmacao" id="confirmacaoApp"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cartao-form app-passos">
+                <h3>Como a demonstração funciona</h3>
+                <ol class="lista-passos">
+                    <li>O painel gera o QR e o segredo de pareamento.</li>
+                    <li>O aplicativo lê o QR, faz o login de conceito e mostra as bicicletas disponíveis.</li>
+                    <li>Ao confirmar, o app calcula o código assinado com HMAC-SHA256, sem usar a rede.</li>
+                    <li>O código é digitado aqui; a API valida, cria a locação com as regras normais e devolve a confirmação.</li>
+                    <li>A confirmação é digitada no app, que valida a assinatura e fecha o ciclo.</li>
+                </ol>
+            </div>
+        </section>
+
         <!-- ---------- LOG DE API ---------- -->
         <section class="aba-conteudo oculto" data-tela="api">
             <div class="cabecalho-secao">
@@ -264,6 +338,7 @@
 
 <div id="toast" class="toast oculto" role="status"></div>
 
+<script src="/app/vendor/qrcode.min.js"></script>
 <script src="/app/app.js"></script>
 </body>
 </html>

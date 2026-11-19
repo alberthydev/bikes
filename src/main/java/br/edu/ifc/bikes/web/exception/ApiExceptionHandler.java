@@ -1,6 +1,7 @@
 package br.edu.ifc.bikes.web.exception;
 
 import br.edu.ifc.bikes.exception.ClienteUniqueViolationException;
+import br.edu.ifc.bikes.exception.CodigoAppInvalidoException;
 import br.edu.ifc.bikes.exception.CodigoUniqueViolationException;
 import br.edu.ifc.bikes.exception.EntityNotFoundException;
 import br.edu.ifc.bikes.exception.PasswordInvalidException;
@@ -94,5 +95,16 @@ public class ApiExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
+    }
+
+    @ExceptionHandler(CodigoAppInvalidoException.class)
+    public ResponseEntity<ErrorMessage> codigoAppInvalidoException(
+            RuntimeException ex,
+            HttpServletRequest request){
+
+        return ResponseEntity
+                .status(HttpStatus.UNPROCESSABLE_CONTENT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorMessage(request, HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage()));
     }
 }

@@ -20,6 +20,7 @@ java -jar target/bikes-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 ```
 
 - Interface didática: <http://localhost:8080/>
+- Aplicativo de conceito: <http://localhost:8080/mobile/>
 - Swagger: <http://localhost:8080/docs-bikes.html>
 - Console H2: <http://localhost:8080/h2-console> (`jdbc:h2:mem:bikes`, usuário `sa`)
 
@@ -186,6 +187,43 @@ servida pelo próprio Spring:
 - **Clientes**: lista para o admin e criação do próprio cadastro pelo cliente que ainda não tem um.
 - **Chamadas à API**: histórico com método, caminho, status, tempo e corpos enviados/recebidos,
   para evidenciar o funcionamento de cada endpoint durante a apresentação.
+- **App**: pareamento por QR e importação do código gerado pelo aplicativo de conceito (aba
+  visível apenas para o admin).
+
+## Aplicativo local (conceito)
+
+O PoC em `/mobile/` simula um aplicativo offline no navegador. Ele não chama a API: o painel
+gera um QR com a configuração e o celular devolve um código assinado, digitado no painel.
+
+Fluxo:
+
+1. O admin abre a aba **App**, escolhe o cliente e gera o QR (segredo válido por 30 minutos).
+2. O aplicativo lê o QR (câmera ou texto colado) e aplica o tema, o cliente e a lista de
+   bicicletas disponíveis.
+3. O login é de conceito (senha `123456`) e o cadastro abre apenas um aviso de que é um conceito.
+4. Ao confirmar a locação, o aplicativo monta um código com HMAC-SHA256 e o exibe em 6 grupos
+   de 6 caracteres.
+5. O admin digita o código no painel; a API valida a assinatura, cria a locação com as regras
+   normais e devolve uma confirmação `L<id>-XXXX`.
+6. O aplicativo valida a confirmação com o mesmo segredo e fecha o ciclo.
+
+| Método | Caminho                     | Permissão | Descrição                                      |
+|--------|-----------------------------|-----------|------------------------------------------------|
+| POST   | `/api/v1/app/pareamento`    | ADMIN     | Cria o segredo e devolve cliente e bicicletas  |
+| POST   | `/api/v1/app/locacoes`      | ADMIN     | Valida o código e cria a locação                |
+
+Detalhes do código:
+
+- 14 bytes de dados (versão, cliente, bicicleta, retirada em minutos, horas e nonce) + 8 bytes
+  de HMAC-SHA256 truncado, em Base32 Crockford (sem I, L, O e U).
+- Validade de 15 minutos com tolerância de relógio; o mesmo código não pode ser usado duas vezes.
+- O servidor testa o segredo de todos os pareamentos ativos até um HMAC conferir; o pareamento
+  fica apenas em memória e expira em 30 minutos.
+- O cartão é fixo de conceito (`4111111111111111`) e o sistema continua guardando só os 4 finais.
+- O QR leva apenas configuração (tema, cliente, segredo e catálogo), não HTML/CSS/JS.
+
+Limitações de demonstração: WebCrypto e câmera exigem `localhost` ou HTTPS; sem câmera, cole o
+texto do QR. Para empacotar em APK, basta envolver `static/mobile` em um WebView/Capacitor.
 
 ## Aderência às demandas do PDF
 
@@ -213,14 +251,15 @@ Observações sobre o modelo de dados:
 
 ## Testes
 
-`.\mvnw.cmd verify` executa 47 testes de integração:
+`.\mvnw.cmd verify` executa os testes de integração:
 
 | Classe          | Testes | Cobertura resumida                                              |
 |-----------------|--------|-----------------------------------------------------------------|
+| `AppIT`         | 11     | pareamento, código válido, replay, adulteração, validade, 403    |
 | `BicicletaIT`   | 8      | cadastro, código único, validação, permissões, busca, status     |
-| `ClienteIT`     | 7      | cadastro com telefone/e-mail, CPF único, validação, permissões   |
-| `LocacaoIT`     | 17     | criação, conflitos, devolução, cálculo do valor, relatório, PDF  |
-| `UsuarioIT`     | 10     | recursos de usuário existentes                                   |
+| `ClienteIT`     | 12     | cadastro com telefone/e-mail, CPF único, validação, permissões   |
+| `LocacaoIT`     | 18     | criação, conflitos, devolução, cálculo do valor, relatório, PDF  |
+| `UsuarioIT`     | 11     | recursos de usuário existentes                                   |
 | `UsuarioSenhaIT`| 5      | alteração de senha existente                                     |
 
 A massa de dados dos novos testes está em

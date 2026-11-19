@@ -130,7 +130,7 @@ que o usuário tenha permissão. As tabelas são criadas pelo `ddl-auto=update`.
 `.github/workflows/ci-cd.yml` roda em cada push na `main`, em tags `v*`, em pull requests e
 manualmente:
 
-1. **Testes**: `./mvnw verify` (47 testes de integração, H2).
+1. **Testes**: `./mvnw verify` (65 testes de integração, H2).
 2. **Imagem**: build multi-stage para `linux/amd64` e `linux/arm64`, push para o GHCR.
 3. **Smoke test com MySQL**: sobe um MySQL 8.4 no job, executa a imagem publicada contra ele,
    confere a página inicial e faz login com a conta de demonstração. Isso valida o caminho

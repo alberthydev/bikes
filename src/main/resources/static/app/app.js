@@ -9,6 +9,7 @@ const state = {
     statusFiltro: '',
     bicicletas: [],
     locacoes: [],
+    pareamento: null,
     log: []
 };
 
@@ -143,6 +144,7 @@ function aplicarUsuarioNoTopo() {
     $('#usuario').classList.remove('oculto');
     // O recurso Bicicleta e restrito ao admin no PDF, entao a aba nao aparece para o cliente.
     $('#abas [data-aba="bicicletas"]').classList.toggle('oculto', role !== 'ADMIN');
+    $('#abas [data-aba="app"]').classList.toggle('oculto', role !== 'ADMIN');
 }
 
 function encerrarSessao(mostrarAviso = true) {
@@ -189,6 +191,7 @@ function irPara(aba) {
     if (aba === 'bicicletas') carregarBicicletas();
     if (aba === 'locacoes') carregarLocacoes();
     if (aba === 'clientes') carregarClientes();
+    if (aba === 'app') carregarClientesApp();
     if (aba === 'api') renderizarLog();
 }
 
@@ -504,6 +507,107 @@ async function criarCliente(form) {
     }
 }
 
+/* ============================ aplicativo ============================ */
+
+const TEMA_APP = {
+    nome: 'Locabike',
+    primaria: '#0f766e',
+    fundo: '#f8fafc',
+    texto: '#1f2937',
+    raio: 14
+};
+
+async function carregarClientesApp() {
+    if (!ehAdmin()) return;
+    try {
+        const clientes = await api('GET', '/api/v1/clientes');
+        const select = $('#selectClienteApp');
+        const atual = select.value;
+        select.innerHTML = '<option value="">Primeiro cliente cadastrado</option>'
+            + clientes.map(c => `<option value="${c.id}">${esc(c.nome)} · ${esc(c.email || c.cpf)}</option>`).join('');
+        if (atual) select.value = atual;
+    } catch (e) {
+        avisar(e.message, 'erro');
+    }
+}
+
+function montarPayloadApp(dados) {
+    return JSON.stringify({
+        v: 1,
+        pid: dados.id,
+        seg: dados.segredo,
+        exp: dados.expiraEm,
+        tema: TEMA_APP,
+        api: location.origin,
+        usuario: dados.usuario,
+        bikes: dados.bicicletas
+    });
+}
+
+async function gerarPareamento() {
+    const select = $('#selectClienteApp');
+    const clienteId = select.value ? Number(select.value) : null;
+    try {
+        const dados = await api('POST', '/api/v1/app/pareamento', clienteId ? { clienteId } : {});
+        state.pareamento = dados;
+
+        const payload = montarPayloadApp(dados);
+        const area = $('#areaQrApp');
+        const alvo = $('#qrApp');
+        alvo.innerHTML = '';
+        new QRCode(alvo, {
+            text: payload,
+            width: 260,
+            height: 260,
+            correctLevel: QRCode.CorrectLevel.M
+        });
+
+        $('#qrCliente').textContent = `${dados.usuario.nome} · cliente #${dados.usuario.clienteId}`;
+        $('#qrValidade').textContent = `Válido até ${formatarDataHora(dados.expiraEm)} · ${dados.bicicletas.length} bicicleta(s) disponível(is)`;
+        $('#payloadApp').value = payload;
+        area.classList.remove('oculto');
+        avisar('QR de pareamento gerado.');
+    } catch (e) {
+        avisar(e.message, 'erro');
+    }
+}
+
+async function copiarPayload() {
+    const texto = $('#payloadApp').value;
+    if (!texto) return;
+    try {
+        await navigator.clipboard.writeText(texto);
+        avisar('Texto do QR copiado.');
+    } catch {
+        $('#payloadApp').select();
+        document.execCommand('copy');
+        avisar('Texto do QR copiado.');
+    }
+}
+
+async function importarLocacaoApp(form) {
+    const codigo = form.codigo.value.trim();
+    if (!codigo) {
+        avisar('Informe o código gerado pelo aplicativo.', 'erro');
+        return;
+    }
+    try {
+        const resultado = await api('POST', '/api/v1/app/locacoes', { codigo });
+        const l = resultado.locacao;
+        $('#resultadoAppTitulo').textContent = `Locação #${l.id} registrada para ${l.nomeCliente}`;
+        $('#resultadoAppDetalhe').textContent =
+            `${l.codigoBicicleta} · retirada ${formatarDataHora(l.dataRetirada)} · previsão ${formatarDataHora(l.previsaoDevolucao)} · cartão final ${l.cartaoUltimosDigitos}`;
+        $('#confirmacaoApp').textContent = resultado.confirmacao;
+        $('#resultadoApp').classList.remove('oculto');
+        form.reset();
+        avisar(`Locação #${l.id} criada pelo aplicativo.`);
+        if (state.aba === 'locacoes') await carregarLocacoes();
+    } catch (e) {
+        $('#resultadoApp').classList.add('oculto');
+        avisar(e.message, 'erro');
+    }
+}
+
 /* ============================ log ============================ */
 
 function renderizarLog() {
@@ -609,6 +713,13 @@ function ligarEventos() {
     $('#formCliente').addEventListener('submit', evento => {
         evento.preventDefault();
         criarCliente(evento.target);
+    });
+
+    $('#btnPareamento').addEventListener('click', gerarPareamento);
+    $('#btnCopiarPayload').addEventListener('click', copiarPayload);
+    $('#formAppLocacao').addEventListener('submit', evento => {
+        evento.preventDefault();
+        importarLocacaoApp(evento.target);
     });
 
     $('#btnLimparLog').addEventListener('click', () => {

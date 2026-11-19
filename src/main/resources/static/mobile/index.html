@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0f766e">
+    <title>Locabike · Aplicativo de demonstração</title>
+    <link rel="stylesheet" href="/mobile/mobile.css">
+</head>
+<body>
+
+<header class="app-topo">
+    <div class="marca">
+        <span class="logo" aria-hidden="true">🚲</span>
+        <div>
+            <h1>Locabike</h1>
+            <p>Aplicativo de demonstração</p>
+        </div>
+    </div>
+    <span class="chip">Conceito</span>
+</header>
+
+<main class="app-conteudo">
+
+    <!-- ============ PAREAMENTO ============ -->
+    <section id="telaPareamento" class="tela">
+        <div class="cartao destaque">
+            <h2>Parear com o painel</h2>
+            <p class="texto-suave">
+                Leia o QR exibido na aba <strong>App</strong> do painel. Ele traz o tema, o cliente
+                de demonstração e um segredo temporário. Nada é enviado pela rede.
+            </p>
+
+            <div class="acoes">
+                <button id="btnCamera" class="botao" type="button">Ler QR com a câmera</button>
+                <button id="btnPararCamera" class="botao secundario oculto" type="button">Parar câmera</button>
+            </div>
+
+            <video id="videoQr" class="video-qr oculto" playsinline muted></video>
+
+            <label class="campo">
+                <span>Ou cole o texto do QR</span>
+                <textarea id="textoConfig" rows="5" spellcheck="false"
+                          placeholder='{"v":1,"pid":"...","seg":"...","usuario":{...},"bikes":[...]}'></textarea>
+            </label>
+
+            <button id="btnUsarConfig" class="botao largo" type="button">Usar configuração</button>
+            <p id="erroPareamento" class="mensagem-erro oculto" role="alert"></p>
+            <p class="dica">No celular, a câmera e a criptografia exigem HTTPS ou <code>localhost</code>.</p>
+        </div>
+    </section>
+
+    <!-- ============ LOGIN ============ -->
+    <section id="telaLogin" class="tela oculto">
+        <div class="cartao destaque">
+            <h2>Entrar</h2>
+            <p class="texto-suave">Login de conceito: nenhuma senha real é enviada ou verificada.</p>
+            <form id="formLogin" class="formulario">
+                <label class="campo">
+                    <span>E-mail</span>
+                    <input id="loginEmail" type="email" autocomplete="username" required>
+                </label>
+                <label class="campo">
+                    <span>Senha</span>
+                    <input id="loginSenha" type="password" autocomplete="current-password" value="123456" required>
+                </label>
+                <button class="botao largo" type="submit">Entrar</button>
+            </form>
+            <button id="btnCadastro" class="link-botao" type="button">Criar uma conta</button>
+            <p class="dica">Senha de demonstração: <strong>123456</strong>.</p>
+        </div>
+    </section>
+
+    <!-- ============ LOCAÇÃO ============ -->
+    <section id="telaApp" class="tela oculto">
+        <div class="cartao usuario-card">
+            <div>
+                <p class="rotulo">Conectado como</p>
+                <p class="nome-usuario" id="nomeUsuario"></p>
+                <p class="texto-suave" id="emailUsuario"></p>
+            </div>
+            <button id="btnSairApp" class="botao pequeno secundario" type="button">Sair</button>
+        </div>
+
+        <div class="cartao">
+            <h2>Nova locação</h2>
+            <p class="texto-suave">Escolha a bicicleta e por quantas horas pretende ficar com ela.</p>
+            <div id="listaBikes" class="lista-bikes"></div>
+
+            <div class="linha-horas">
+                <label class="campo">
+                    <span>Horas</span>
+                    <input id="horas" type="number" min="1" max="24" step="1" value="2">
+                </label>
+                <p class="estimativa">Estimativa<br><strong id="valorEstimado">R$ 10,00</strong></p>
+            </div>
+
+            <button id="btnGerarCodigo" class="botao largo" type="button">Gerar código de locação</button>
+            <p class="dica">Tarifa de conceito: R$ 5,00 por hora iniciada.</p>
+        </div>
+
+        <div id="areaCodigo" class="cartao codigo-area oculto">
+            <h2>Leve este código para o painel</h2>
+            <p class="texto-suave">O painel valida a assinatura, cria a locação e devolve uma confirmação.</p>
+            <code id="codigoGerado" class="codigo-gerado"></code>
+            <div class="acoes">
+                <button id="btnCopiarCodigo" class="botao secundario" type="button">Copiar código</button>
+                <button id="btnNovoCodigo" class="botao secundario" type="button">Trocar bicicleta</button>
+            </div>
+        </div>
+
+        <div id="areaConfirmacao" class="cartao oculto">
+            <h2>Confirmar no aplicativo</h2>
+            <p class="texto-suave">Digite o código que apareceu no painel depois de registrar a locação.</p>
+            <form id="formConfirmacao" class="formulario">
+                <label class="campo">
+                    <span>Confirmação do painel</span>
+                    <input id="confirmacao" autocomplete="off" spellcheck="false" placeholder="L12-AB3D" required>
+                </label>
+                <button class="botao largo" type="submit">Validar confirmação</button>
+            </form>
+            <p id="resultadoConfirmacao" class="mensagem-ok oculto" role="status"></p>
+            <p id="erroConfirmacao" class="mensagem-erro oculto" role="alert"></p>
+        </div>
+    </section>
+
+</main>
+
+<footer class="app-rodape">
+    <span>Protótipo offline · sem chamadas à API</span>
+    <span id="estadoCripto"></span>
+</footer>
+
+<div id="toast" class="toast oculto" role="status"></div>
+
+<dialog id="dialogCadastro" class="dialogo">
+    <h2>Cadastro é apenas um conceito</h2>
+    <p>
+        Nesta demonstração não há criação de conta. O login usa um usuário fixo vindo do QR de
+        pareamento e a senha <strong>123456</strong>.
+    </p>
+    <p>
+        Em um aplicativo publicado, o cadastro exigiria rede, validação de e-mail e as regras de
+        segurança da API.
+    </p>
+    <form method="dialog">
+        <button class="botao largo" type="submit">Entendi</button>
+    </form>
+</dialog>
+
+<script src="/mobile/mobile.js"></script>
+</body>
+</html>
