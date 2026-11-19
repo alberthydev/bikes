@@ -21,6 +21,7 @@ java -jar target/bikes-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 
 - Interface didática: <http://localhost:8080/>
 - Aplicativo de conceito: <http://localhost:8080/mobile/>
+- APK de demonstração: `mobile-app/android/app/build/outputs/apk/debug/app-debug.apk`
 - Swagger: <http://localhost:8080/docs-bikes.html>
 - Console H2: <http://localhost:8080/h2-console> (`jdbc:h2:mem:bikes`, usuário `sa`)
 
@@ -223,7 +224,28 @@ Detalhes do código:
 - O QR leva apenas configuração (tema, cliente, segredo e catálogo), não HTML/CSS/JS.
 
 Limitações de demonstração: WebCrypto e câmera exigem `localhost` ou HTTPS; sem câmera, cole o
-texto do QR. Para empacotar em APK, basta envolver `static/mobile` em um WebView/Capacitor.
+texto do QR.
+
+### APK de demonstração
+
+A pasta [`mobile-app`](mobile-app/) empacota exatamente esta página em um APK Android com
+Capacitor. O app continua offline: a ponte nativa apenas abre a câmera do celular e decodifica
+a foto com `jsQR`, sem Google Play Services e sem chamadas à API. O WebView serve os arquivos
+locais em `https://localhost`, então o WebCrypto continua disponível.
+
+O APK gerado fica em `mobile-app/android/app/build/outputs/apk/debug/app-debug.apk`. Para
+regerar depois de alterar `static/mobile`:
+
+```powershell
+cd mobile-app
+$env:JAVA_HOME = "$env:LOCALAPPDATA\jdk-21"
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
+npm run apk
+```
+
+Instruções de instalação e detalhes da ponte de câmera estão em
+[`mobile-app/README.md`](mobile-app/README.md).
 
 ## Aderência às demandas do PDF
 

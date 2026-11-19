@@ -100,13 +100,21 @@ function usarConfiguracao(texto) {
 
 /* ============================ câmera ============================ */
 
+function cameraNativa() {
+    return Boolean(window.LocabikeCamera && window.LocabikeCamera.disponivel);
+}
+
 async function ligarCamera() {
     mostrarErro('#erroPareamento', '');
+    if (cameraNativa()) {
+        await lerQrNativo();
+        return;
+    }
     if (!window.isSecureContext) {
         mostrarErro('#erroPareamento', 'A câmera exige HTTPS ou localhost. Cole o texto do QR para continuar.');
         return;
     }
-    if (!('BarcodeDetector' in window)) {
+    if (!('BarcodeDetector' in window) && !window.jsQR) {
         mostrarErro('#erroPareamento', 'Este navegador não tem leitor de QR. Cole o texto do QR exibido no painel.');
         return;
     }
@@ -119,7 +127,9 @@ async function ligarCamera() {
         video.srcObject = cameraStream;
         video.classList.remove('oculto');
         await video.play();
-        detectorQr = new BarcodeDetector({ formats: ['qr_code'] });
+        detectorQr = 'BarcodeDetector' in window
+            ? new BarcodeDetector({ formats: ['qr_code'] })
+            : null;
         $('#btnCamera').classList.add('oculto');
         $('#btnPararCamera').classList.remove('oculto');
         cameraTimer = setInterval(procurarQr, 450);
@@ -129,19 +139,59 @@ async function ligarCamera() {
     }
 }
 
+async function lerQrNativo() {
+    const botao = $('#btnCamera');
+    botao.disabled = true;
+    try {
+        const texto = await window.LocabikeCamera.lerQr();
+        if (!texto) {
+            mostrarErro('#erroPareamento', 'Nenhum QR foi encontrado na foto. Enquadre o QR inteiro e tente novamente.');
+            return;
+        }
+        usarConfiguracao(texto);
+    } catch (e) {
+        mostrarErro('#erroPareamento', `Não foi possível ler o QR: ${e.message}`);
+    } finally {
+        botao.disabled = false;
+    }
+}
+
 async function procurarQr() {
     const video = $('#videoQr');
-    if (!detectorQr || video.readyState < 2) return;
+    if (video.readyState < 2) return;
     try {
-        const codigos = await detectorQr.detect(video);
-        if (codigos.length) {
-            const texto = codigos[0].rawValue;
+        let texto = null;
+        if (detectorQr) {
+            const codigos = await detectorQr.detect(video);
+            if (codigos.length) texto = codigos[0].rawValue;
+        } else if (window.jsQR) {
+            texto = lerQrDoVideo(video);
+        }
+        if (texto) {
             pararCamera();
             usarConfiguracao(texto);
         }
     } catch {
         /* quadro sem QR: continua tentando */
     }
+}
+
+function lerQrDoVideo(video) {
+    const largura = video.videoWidth;
+    const altura = video.videoHeight;
+    if (!largura || !altura) return null;
+
+    const escala = Math.min(1, 800 / Math.max(largura, altura));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(largura * escala);
+    canvas.height = Math.round(altura * escala);
+    const contexto = canvas.getContext('2d', { willReadFrequently: true });
+    contexto.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const pixels = contexto.getImageData(0, 0, canvas.width, canvas.height);
+    const codigo = window.jsQR(pixels.data, canvas.width, canvas.height, {
+        inversionAttempts: 'dontInvert'
+    });
+    return codigo ? codigo.data : null;
 }
 
 function pararCamera() {

@@ -1,0 +1,11 @@
+{
+  "appId": "br.edu.ifc.locabike",
+  "appName": "Locabike",
+  "webDir": "web",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

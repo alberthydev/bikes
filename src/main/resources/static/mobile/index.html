@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0f766e">
     <title>Locabike · Aplicativo de demonstração</title>
-    <link rel="stylesheet" href="/mobile/mobile.css">
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
 
@@ -46,7 +46,10 @@
 
             <button id="btnUsarConfig" class="botao largo" type="button">Usar configuração</button>
             <p id="erroPareamento" class="mensagem-erro oculto" role="alert"></p>
-            <p class="dica">No celular, a câmera e a criptografia exigem HTTPS ou <code>localhost</code>.</p>
+            <p class="dica">
+                No APK, o botão abre a câmera do celular. No navegador, a câmera e a criptografia
+                exigem HTTPS ou <code>localhost</code>.
+            </p>
         </div>
     </section>
 
@@ -148,6 +151,7 @@
     </form>
 </dialog>
 
-<script src="/mobile/mobile.js"></script>
+<script src="vendor/jsQR.js"></script>
+<script src="mobile.js"></script>
 </body>
 </html>
