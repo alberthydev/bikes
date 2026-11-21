@@ -1,6 +1,7 @@
 package br.edu.ifc.bikes.service;
 
 import br.edu.ifc.bikes.dto.BicicletaAppDTO;
+import br.edu.ifc.bikes.dto.LocacaoAppHistoricoDTO;
 import br.edu.ifc.bikes.dto.PareamentoAppResponseDTO;
 import br.edu.ifc.bikes.dto.UsuarioAppDTO;
 import br.edu.ifc.bikes.entity.Bicicleta;
@@ -37,6 +38,7 @@ public class PareamentoService {
 
     private final ClienteRepository clienteRepository;
     private final BicicletaRepository bicicletaRepository;
+    private final LocacaoService locacaoService;
     private final SecureRandom random = new SecureRandom();
     private final Map<String, Pareamento> ativos = new ConcurrentHashMap<>();
 
@@ -55,7 +57,10 @@ public class PareamentoService {
                 cliente.getNome(),
                 cliente.getEmail() != null ? cliente.getEmail() : cliente.getUsuario().getUsername(),
                 Instant.now().plus(VALIDADE),
-                bicicletasDisponiveis());
+                bicicletasDisponiveis(),
+                locacaoService.getMinhas(cliente.getUsuario().getId()).stream()
+                        .map(LocacaoAppHistoricoDTO::de)
+                        .toList());
 
         ativos.put(pareamento.id(), pareamento);
         return pareamento;
@@ -105,7 +110,8 @@ public class PareamentoService {
             String nomeCliente,
             String emailCliente,
             Instant expiraEm,
-            List<BicicletaAppDTO> bicicletas
+            List<BicicletaAppDTO> bicicletas,
+            List<LocacaoAppHistoricoDTO> locacoes
     ) {
         public PareamentoAppResponseDTO toResponse() {
             return new PareamentoAppResponseDTO(
@@ -113,7 +119,8 @@ public class PareamentoService {
                     segredo,
                     expiraEm,
                     new UsuarioAppDTO(nomeCliente, emailCliente, clienteId),
-                    bicicletas);
+                    bicicletas,
+                    locacoes);
         }
     }
 }

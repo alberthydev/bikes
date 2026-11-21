@@ -96,11 +96,11 @@
             <div class="cabecalho-secao">
                 <div>
                     <h2>Bicicletas</h2>
-                    <p>Cadastro, consulta por código, filtro por status e manutenção do catálogo.</p>
+                    <p>Cadastro, busca, filtro por status e manutenção do catálogo.</p>
                 </div>
                 <div class="acoes">
-                    <input id="buscaCodigo" type="search" placeholder="Buscar por código (ex.: BK-001)">
-                    <button id="btnBuscarCodigo" class="botao secundario pequeno" type="button">Buscar código</button>
+                    <input id="buscaBicicletas" type="search" aria-label="Buscar bicicletas por código, marca, modelo ou cor"
+                           placeholder="Buscar por código, marca ou modelo">
                 </div>
             </div>
 
@@ -131,7 +131,7 @@
             <div id="formBicicletaArea" class="cartao-form oculto">
                 <h3>Cadastrar bicicleta</h3>
                 <form id="formBicicleta" class="grade-form">
-                    <label>Código <input name="codigo" required maxlength="20" placeholder="BK-007"></label>
+                    <label>Código <input name="codigo" data-mascara="bicicleta" required placeholder="BK-007"></label>
                     <label>Marca <input name="marca" required maxlength="50" placeholder="Caloi"></label>
                     <label>Modelo <input name="modelo" required maxlength="50" placeholder="Elite Carbon"></label>
                     <label>Cor <input name="cor" required maxlength="30" placeholder="Preta"></label>
@@ -167,7 +167,7 @@
                 <div class="grade-form">
                     <label>Bicicleta disponível <select name="bicicletaId" id="selectBicicletas" required></select></label>
                     <label>Previsão de devolução <input name="previsaoDevolucao" type="datetime-local" required></label>
-                    <label>Número do cartão <input name="numeroCartao" required value="4111111111111111" inputmode="numeric" maxlength="19"></label>
+                    <label>Número do cartão <input name="numeroCartao" required value="4111111111111111" inputmode="numeric" data-mascara="cartao" autocomplete="cc-number"></label>
                     <div class="linha-form">
                         <button class="botao" type="submit">Solicitar</button>
                     </div>
@@ -229,8 +229,8 @@
                 <p class="dica">Seu usuário ainda não possui um cadastro de cliente. Sem ele não é possível alugar bicicletas.</p>
                 <form id="formCliente" class="grade-form">
                     <label>Nome completo <input name="nome" required minlength="3" maxlength="100"></label>
-                    <label>CPF <input name="cpf" required maxlength="11" inputmode="numeric" placeholder="Somente números"></label>
-                    <label>Telefone <input name="telefone" maxlength="15" placeholder="(49) 99999-0000"></label>
+                    <label>CPF <input name="cpf" required inputmode="numeric" data-mascara="cpf" placeholder="000.000.000-00"></label>
+                    <label>Telefone <input name="telefone" type="tel" autocomplete="tel-national" data-mascara="telefone" placeholder="(49) 99999-0000"></label>
                     <label>E-mail <input name="email" type="email" maxlength="100"></label>
                     <div class="linha-form">
                         <button class="botao" type="submit">Salvar cadastro</button>
@@ -244,7 +244,7 @@
             <div class="cabecalho-secao">
                 <div>
                     <h2>Aplicativo local</h2>
-                    <p>O celular não acessa a API: ele recebe a configuração por QR e devolve um código assinado, digitado aqui.</p>
+                    <p>O celular não acessa a API: ele recebe a configuração por QR e devolve um código assinado, digitado aqui. As locações confirmadas ficam salvas no app, com menu de início, aluguel, histórico e perfil.</p>
                 </div>
                 <div class="acoes">
                     <a class="botao secundario pequeno" href="/mobile/" target="_blank" rel="noopener">Abrir aplicativo</a>
@@ -254,7 +254,7 @@
             <div class="app-grade">
                 <div class="cartao-form">
                     <h3>1. Parear o celular</h3>
-                    <p class="dica">O QR leva o tema, o cliente de demonstração e um segredo válido por 30 minutos. A lista de bicicletas disponíveis vai junto.</p>
+                    <p class="dica">O QR leva o tema, o cliente de demonstração e um segredo válido por 30 minutos. A lista de bicicletas disponíveis vai junto. No APK, o QR é lido pela câmera dentro do próprio aplicativo.</p>
                     <div class="grade-form">
                         <label>Cliente da locação
                             <select id="selectClienteApp">
@@ -276,7 +276,7 @@
                             <button id="btnCopiarPayload" class="botao pequeno secundario" type="button">Copiar texto do QR</button>
                         </div>
                     </div>
-                    <p class="dica">Sem câmera? Copie o texto acima e cole na tela do aplicativo. No celular, a leitura do QR usa a câmera.</p>
+                    <p class="dica">Sem câmera? Copie o texto acima e cole na tela do aplicativo. No celular, a leitura do QR acontece dentro do app (sem abrir o app de câmera do sistema), o que também funciona nos Samsung.</p>
                 </div>
 
                 <div class="cartao-form">
@@ -285,7 +285,7 @@
                     <form id="formAppLocacao" class="grade-form">
                         <label>Código gerado no aplicativo
                             <input name="codigo" id="codigoApp" required autocomplete="off" spellcheck="false"
-                                   maxlength="41" placeholder="XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX">
+                                   data-mascara="solicitacao" autocapitalize="characters" placeholder="XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX">
                         </label>
                         <div class="linha-form">
                             <button class="botao" type="submit">Registrar locação</button>
@@ -307,7 +307,8 @@
                     <li>O aplicativo lê o QR, faz o login de conceito e mostra as bicicletas disponíveis.</li>
                     <li>Ao confirmar, o app calcula o código assinado com HMAC-SHA256, sem usar a rede.</li>
                     <li>O código é digitado aqui; a API valida, cria a locação com as regras normais e devolve a confirmação.</li>
-                    <li>A confirmação é digitada no app, que valida a assinatura e fecha o ciclo.</li>
+                    <li>A confirmação é digitada no app, que valida a assinatura, salva a locação e mostra em <strong>Início</strong> e <strong>Minhas locações</strong>.</li>
+                    <li>Depois da devolução registrada no painel, um novo QR atualiza o catálogo e marca a locação antiga como finalizada no app.</li>
                 </ol>
             </div>
         </section>
@@ -339,6 +340,7 @@
 <div id="toast" class="toast oculto" role="status"></div>
 
 <script src="/app/vendor/qrcode.min.js"></script>
+<script src="/mobile/mascaras.js"></script>
 <script src="/app/app.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@ import br.edu.ifc.bikes.dto.LocacaoAppResponseDTO;
 import br.edu.ifc.bikes.dto.PareamentoAppResponseDTO;
 import br.edu.ifc.bikes.entity.Locacao;
 import br.edu.ifc.bikes.service.CodigoAppService;
+import br.edu.ifc.bikes.service.LocacaoService;
 import br.edu.ifc.bikes.service.PareamentoService;
 import br.edu.ifc.bikes.service.PareamentoService.Pareamento;
 import br.edu.ifc.bikes.web.exception.ErrorMessage;
@@ -35,6 +36,9 @@ class AppIT extends IntegrationTestSupport {
 
     @Autowired
     private CodigoAppService codigoAppService;
+
+    @Autowired
+    private LocacaoService locacaoService;
 
     @Test
     void parear_Admin_RetornaSegredoECatalogo() {
@@ -100,8 +104,26 @@ class AppIT extends IntegrationTestSupport {
         assertThat(body.locacao().codigoBicicleta()).isEqualTo("BK-400");
         assertThat(body.locacao().status()).isEqualTo(Locacao.Status.ATIVA);
         assertThat(body.locacao().cartaoUltimosDigitos()).isEqualTo("1111");
-        assertThat(body.confirmacao()).isEqualTo(codigoAppService.gerarConfirmacao(body.locacao().id(), pareamento.segredo()));
+        assertThat(body.confirmacao()).isEqualTo(codigoAppService.gerarConfirmacao(body.locacao().id(), pareamento.segredo(), codigo));
         assertThat(body.confirmacao()).startsWith("L" + body.locacao().id() + "-");
+        String outroCodigo = codigoAppService.gerar(pareamento, BIKE_MANUTENCAO, LocalDateTime.now(), 1);
+        assertThat(body.confirmacao()).isNotEqualTo(
+                codigoAppService.gerarConfirmacao(body.locacao().id(), pareamento.segredo(), outroCodigo));
+
+        assertThat(pareamentoService.criar(CLIENTE_ANA).toResponse().locacoes())
+                .anySatisfy(locacao -> {
+                    assertThat(locacao.id()).isEqualTo(body.locacao().id());
+                    assertThat(locacao.status()).isEqualTo(Locacao.Status.ATIVA);
+                });
+
+        locacaoService.devolver(body.locacao().id(), true);
+        assertThat(pareamentoService.criar(CLIENTE_ANA).toResponse().locacoes())
+                .anySatisfy(locacao -> {
+                    assertThat(locacao.id()).isEqualTo(body.locacao().id());
+                    assertThat(locacao.status()).isEqualTo(Locacao.Status.FINALIZADA);
+                    assertThat(locacao.devolucaoEfetiva()).isNotNull();
+                    assertThat(locacao.valor()).isEqualByComparingTo("5.00");
+                });
     }
 
     @Test

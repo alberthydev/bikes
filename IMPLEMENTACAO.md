@@ -196,21 +196,28 @@ servida pelo próprio Spring:
 O PoC em `/mobile/` simula um aplicativo offline no navegador. Ele não chama a API: o painel
 gera um QR com a configuração e o celular devolve um código assinado, digitado no painel.
 
+A interface foi organizada como um aplicativo comum, com menu inferior **Início**, **Alugar**,
+**Locações** e **Perfil**. A tela inicial mostra a locação ativa, o tempo restante e os totais;
+**Minhas locações** lista o histórico salvo no aparelho, com filtros de ativas e finalizadas e
+detalhes de cada locação (bicicleta, retirada, previsão, duração, valor estimado e confirmação).
+O histórico fica no `localStorage`, separado por cliente, e sobrevive ao fechamento do app.
+
 Fluxo:
 
 1. O admin abre a aba **App**, escolhe o cliente e gera o QR (segredo válido por 30 minutos).
-2. O aplicativo lê o QR (câmera ou texto colado) e aplica o tema, o cliente e a lista de
-   bicicletas disponíveis.
+2. O aplicativo lê o QR com a câmera aberta dentro do próprio app (ou por imagem ou texto colado) e aplica o
+   tema, o cliente, o catálogo e o histórico recente.
 3. O login é de conceito (senha `123456`) e o cadastro abre apenas um aviso de que é um conceito.
 4. Ao confirmar a locação, o aplicativo monta um código com HMAC-SHA256 e o exibe em 6 grupos
    de 6 caracteres.
 5. O admin digita o código no painel; a API valida a assinatura, cria a locação com as regras
-   normais e devolve uma confirmação `L<id>-XXXX`.
-6. O aplicativo valida a confirmação com o mesmo segredo e fecha o ciclo.
+   normais e devolve uma confirmação `L<id>-XXXXXXXX`.
+6. O aplicativo valida a confirmação pelo segredo e pelo código da solicitação, salva a locação no aparelho e fecha o
+   ciclo. A locação passa a aparecer em **Início** e em **Minhas locações**.
 
 | Método | Caminho                     | Permissão | Descrição                                      |
 |--------|-----------------------------|-----------|------------------------------------------------|
-| POST   | `/api/v1/app/pareamento`    | ADMIN     | Cria o segredo e devolve cliente e bicicletas  |
+| POST   | `/api/v1/app/pareamento`    | ADMIN     | Cria o segredo e devolve cliente, catálogo e histórico |
 | POST   | `/api/v1/app/locacoes`      | ADMIN     | Valida o código e cria a locação                |
 
 Detalhes do código:
@@ -221,30 +228,43 @@ Detalhes do código:
 - O servidor testa o segredo de todos os pareamentos ativos até um HMAC conferir; o pareamento
   fica apenas em memória e expira em 30 minutos.
 - O cartão é fixo de conceito (`4111111111111111`) e o sistema continua guardando só os 4 finais.
-- O QR leva apenas configuração (tema, cliente, segredo e catálogo), não HTML/CSS/JS.
+- O QR inclui locações registradas no sistema, priorizando as ativas e as finalizadas
+  mais recentes até o limite do QR. A devolução permanece no painel e o novo QR
+  atualiza o app com a data e o valor cobrados pelo sistema.
 
-Limitações de demonstração: WebCrypto e câmera exigem `localhost` ou HTTPS; sem câmera, cole o
-texto do QR.
+A câmera e o WebCrypto exigem `localhost` ou HTTPS. O app também lê o QR de uma
+imagem selecionada ou aceita o texto copiado do painel.
 
 ### APK de demonstração
 
 A pasta [`mobile-app`](mobile-app/) empacota exatamente esta página em um APK Android com
-Capacitor. O app continua offline: a ponte nativa apenas abre a câmera do celular e decodifica
-a foto com `jsQR`, sem Google Play Services e sem chamadas à API. O WebView serve os arquivos
-locais em `https://localhost`, então o WebCrypto continua disponível.
+Capacitor. O app continua offline e sem chamadas à API. A câmera é aberta **dentro do WebView**
+com `getUserMedia` e o QR é decodificado no aparelho com `jsQR`; o app de câmera do sistema não é
+acionado. Isso corrige o caso dos Samsung (como o S20+) em que a leitura inteligente de QR do app
+de câmera fica bloqueada quando a câmera é usada por outro aplicativo. Não é necessário Google
+Play Services nem o módulo de código de barras do ML Kit. O WebView serve os arquivos locais em
+`https://localhost`, então o WebCrypto continua disponível.
 
 O APK gerado fica em `mobile-app/android/app/build/outputs/apk/debug/app-debug.apk`. Para
 regerar depois de alterar `static/mobile`:
 
-```powershell
+```bash
 cd mobile-app
+npm install
+npm run apk
+```
+
+O script `apk` escolhe `gradlew.bat` no Windows ou `./gradlew` no Linux/macOS. No Windows com
+JDK/SDK fora do `PATH`, configure antes:
+
+```powershell
 $env:JAVA_HOME = "$env:LOCALAPPDATA\jdk-21"
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 $env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
 npm run apk
 ```
 
-Instruções de instalação e detalhes da ponte de câmera estão em
+Instruções de instalação, permissão de câmera e detalhes do APK estão em
 [`mobile-app/README.md`](mobile-app/README.md).
 
 ## Aderência às demandas do PDF

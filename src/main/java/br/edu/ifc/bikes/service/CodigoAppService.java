@@ -31,10 +31,11 @@ public class CodigoAppService {
 
     /** Base32 de Crockford: sem I, L, O e U para evitar confusao na digitacao. */
     private static final String ALFABETO = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+    private static final byte VERSAO_LEGADA = 1;
+    private static final byte VERSAO_ATUAL = 2;
     private static final int TAMANHO_DADOS = 14;
     private static final int TAMANHO_MAC = 8;
     private static final int TAMANHO_CODIGO = TAMANHO_DADOS + TAMANHO_MAC;
-    private static final byte VERSAO = 1;
     /** Tolerancia entre o relogio do celular e o do painel. */
     private static final Duration TOLERANCIA = Duration.ofMinutes(15);
     private static final int HORAS_MAXIMAS = 24;
@@ -58,7 +59,7 @@ public class CodigoAppService {
         }
         long minutos = retirada.atZone(ZoneId.systemDefault()).toEpochSecond() / 60;
         byte[] dados = new byte[TAMANHO_DADOS];
-        dados[0] = VERSAO;
+        dados[0] = VERSAO_ATUAL;
         escrever24(dados, 1, pareamento.clienteId());
         escrever24(dados, 4, bicicletaId);
         escrever32(dados, 7, minutos);
@@ -97,11 +98,13 @@ public class CodigoAppService {
         byte[] dados = Arrays.copyOfRange(bytes, 0, TAMANHO_DADOS);
         byte[] mac = Arrays.copyOfRange(bytes, TAMANHO_DADOS, TAMANHO_CODIGO);
 
+        // O último caractere pode conter bits de preenchimento.
+        String codigoCanonico = base32(bytes);
         for (Pareamento pareamento : pareamentoService.ativos()) {
             if (!MessageDigest.isEqual(mac, Arrays.copyOf(hmac(pareamento.segredo(), dados), TAMANHO_MAC))) {
                 continue;
             }
-            return interpretar(codigo, pareamento, dados);
+            return interpretar(codigoCanonico, pareamento, dados);
         }
         throw new CodigoAppInvalidoException("Código inválido ou vencido. Gere um novo código no aplicativo.");
     }
@@ -115,8 +118,14 @@ public class CodigoAppService {
         return "L" + locacaoId + "-" + base32(mac).substring(0, 4);
     }
 
+    public String gerarConfirmacao(Long locacaoId, String segredo, String codigo) {
+        String mensagem = "L" + locacaoId + ":" + normalizar(codigo);
+        byte[] mac = hmac(segredo, mensagem.getBytes(StandardCharsets.UTF_8));
+        return "L" + locacaoId + "-" + base32(mac).substring(0, 8);
+    }
+
     private CodigoDecodificado interpretar(String codigo, Pareamento pareamento, byte[] dados) {
-        if (dados[0] != VERSAO) {
+        if (dados[0] != VERSAO_LEGADA && dados[0] != VERSAO_ATUAL) {
             throw new CodigoAppInvalidoException("Versão de código não suportada. Atualize o aplicativo.");
         }
 
@@ -137,13 +146,13 @@ public class CodigoAppService {
         }
 
         limparUsados();
-        Instant expiraEm = Instant.now().plus(TOLERANCIA);
+        Instant expiraEm = retirada.atZone(ZoneId.systemDefault()).toInstant().plus(TOLERANCIA);
         if (usados.putIfAbsent(codigo, expiraEm) != null) {
             throw new CodigoAppInvalidoException("Este código já foi utilizado. Gere um novo código.");
         }
 
         return new CodigoDecodificado(
-                pareamento.id(), pareamento.segredo(), clienteId, bicicletaId, retirada, horas);
+                pareamento.id(), pareamento.segredo(), clienteId, bicicletaId, retirada, horas, dados[0], codigo);
     }
 
     private void limparUsados() {
@@ -158,7 +167,9 @@ public class CodigoAppService {
             Long clienteId,
             Long bicicletaId,
             LocalDateTime retirada,
-            int horas
+            int horas,
+            int versao,
+            String codigo
     ) { }
 
     static String formatar(String codigo) {

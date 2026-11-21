@@ -12,6 +12,7 @@ public record PareamentoAppResponseDTO(
         String segredo,
         Instant expiraEm,
         UsuarioAppDTO usuario,
-        List<BicicletaAppDTO> bicicletas
+        List<BicicletaAppDTO> bicicletas,
+        List<LocacaoAppHistoricoDTO> locacoes
 ) {
 }

@@ -213,13 +213,31 @@ async function carregarBicicletas() {
     }
 }
 
+function normalizarBusca(texto) {
+    return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+}
+
+function filtrarBicicletas(bicicletas, busca) {
+    const termos = normalizarBusca(busca).split(/\s+/).filter(Boolean);
+    if (!termos.length) return bicicletas;
+
+    return bicicletas.filter(bicicleta => {
+        const codigo = normalizarBusca(bicicleta.codigo);
+        const descricao = normalizarBusca([codigo, bicicleta.marca, bicicleta.modelo, bicicleta.cor].join(' '));
+        const codigoCompacto = codigo.replaceAll('-', '');
+        return termos.every(termo =>
+            descricao.includes(termo) || codigoCompacto.includes(termo));
+    });
+}
+
 function renderizarBicicletas() {
     const admin = ehAdmin();
     $('#thAcoesBicicleta').classList.toggle('oculto', !admin);
     $('#formBicicletaArea').classList.toggle('oculto', !admin);
 
+    const bicicletas = filtrarBicicletas(state.bicicletas, $('#buscaBicicletas').value);
     const corpo = $('#corpoBicicletas');
-    corpo.innerHTML = state.bicicletas.map(b => `
+    corpo.innerHTML = bicicletas.map(b => `
         <tr>
             <td><strong>${esc(b.codigo)}</strong></td>
             <td>${esc(b.marca)} <span class="sub">${esc(b.modelo)}</span></td>
@@ -240,32 +258,16 @@ function renderizarBicicletas() {
         </tr>
     `).join('');
 
-    $('#vazioBicicletas').classList.toggle('oculto', state.bicicletas.length > 0);
-}
-
-async function buscarPorCodigo() {
-    const codigo = $('#buscaCodigo').value.trim();
-    if (!codigo) {
-        carregarBicicletas();
-        return;
-    }
-    try {
-        state.bicicletas = [await api('GET', `/api/v1/bicicletas/codigo/${encodeURIComponent(codigo)}`)];
-        renderizarBicicletas();
-    } catch (e) {
-        state.bicicletas = [];
-        renderizarBicicletas();
-        avisar(e.message, 'erro');
-    }
+    $('#vazioBicicletas').classList.toggle('oculto', bicicletas.length > 0);
 }
 
 async function criarBicicleta(form) {
     const dados = new FormData(form);
     const corpo = {
         codigo: dados.get('codigo'),
-        marca: dados.get('marca'),
-        modelo: dados.get('modelo'),
-        cor: dados.get('cor'),
+        marca: dados.get('marca').trim(),
+        modelo: dados.get('modelo').trim(),
+        cor: dados.get('cor').trim(),
         aro: Number(dados.get('aro')),
         status: dados.get('status')
     };
@@ -388,7 +390,7 @@ async function solicitarLocacao(form) {
         const locacao = await api('POST', '/api/v1/locacoes', {
             bicicletaId: Number(bicicletaId),
             previsaoDevolucao: dados.get('previsaoDevolucao'),
-            numeroCartao: dados.get('numeroCartao')
+            numeroCartao: mascaras.digitos(dados.get('numeroCartao'))
         });
         avisar(`Locação #${locacao.id} criada para ${locacao.codigoBicicleta}.`);
         await carregarLocacoes();
@@ -493,10 +495,10 @@ async function criarCliente(form) {
     const dados = new FormData(form);
     try {
         const cliente = await api('POST', '/api/v1/clientes', {
-            nome: dados.get('nome'),
-            cpf: dados.get('cpf'),
+            nome: dados.get('nome').trim(),
+            cpf: mascaras.digitos(dados.get('cpf')),
             telefone: dados.get('telefone') || null,
-            email: dados.get('email') || null
+            email: dados.get('email').trim() || null
         });
         form.reset();
         state.usuario.clienteId = cliente.id;
@@ -532,16 +534,33 @@ async function carregarClientesApp() {
 }
 
 function montarPayloadApp(dados) {
-    return JSON.stringify({
+    const config = {
         v: 1,
         pid: dados.id,
         seg: dados.segredo,
         exp: dados.expiraEm,
         tema: TEMA_APP,
-        api: location.origin,
         usuario: dados.usuario,
-        bikes: dados.bicicletas
-    });
+        bikes: dados.bicicletas,
+        locacoes: []
+    };
+    const historico = dados.locacoes || [];
+    const ordenadas = [
+        ...historico.filter(locacao => locacao.status === 'ATIVA'),
+        ...historico.filter(locacao => locacao.status !== 'ATIVA')
+    ];
+    // O gerador de QR embarcado lê ASCII de forma consistente. Escapes JSON
+    // preservam os acentos e outros caracteres na leitura pelo aplicativo.
+    const serializar = () => JSON.stringify(config).replace(/[^\x00-\x7F]/g,
+        caractere => '\\u' + caractere.charCodeAt(0).toString(16).padStart(4, '0'));
+    for (const locacao of ordenadas) {
+        config.locacoes.push(locacao);
+        if (serializar().length > 1500) {
+            config.locacoes.pop();
+            break;
+        }
+    }
+    return { payload: serializar(), totalLocacoes: config.locacoes.length };
 }
 
 async function gerarPareamento() {
@@ -551,21 +570,26 @@ async function gerarPareamento() {
         const dados = await api('POST', '/api/v1/app/pareamento', clienteId ? { clienteId } : {});
         state.pareamento = dados;
 
-        const payload = montarPayloadApp(dados);
+        const { payload, totalLocacoes } = montarPayloadApp(dados);
         const area = $('#areaQrApp');
         const alvo = $('#qrApp');
-        alvo.innerHTML = '';
-        new QRCode(alvo, {
-            text: payload,
-            width: 260,
-            height: 260,
-            correctLevel: QRCode.CorrectLevel.M
-        });
+        alvo.replaceChildren();
+        alvo.classList.toggle('oculto', payload.length > 2328);
 
         $('#qrCliente').textContent = `${dados.usuario.nome} · cliente #${dados.usuario.clienteId}`;
-        $('#qrValidade').textContent = `Válido até ${formatarDataHora(dados.expiraEm)} · ${dados.bicicletas.length} bicicleta(s) disponível(is)`;
+        $('#qrValidade').textContent = `Válido até ${formatarDataHora(dados.expiraEm)} · ${dados.bicicletas.length} bicicleta(s) disponível(is) · ${totalLocacoes} de ${dados.locacoes?.length || 0} locação(ões) no QR`;
         $('#payloadApp').value = payload;
         area.classList.remove('oculto');
+        if (payload.length > 2328) {
+            avisar('O catálogo excede o espaço do QR. Copie e cole o texto do pareamento no app.', 'erro');
+            return;
+        }
+        new QRCode(alvo, {
+            text: payload,
+            width: 360,
+            height: 360,
+            correctLevel: QRCode.CorrectLevel.M
+        });
         avisar('QR de pareamento gerado.');
     } catch (e) {
         avisar(e.message, 'erro');
@@ -646,6 +670,7 @@ function resumir(valor) {
 /* ============================ eventos ============================ */
 
 function ligarEventos() {
+    document.querySelectorAll('[data-mascara]').forEach(campo => mascaras.aplicar(campo));
     $('#formLogin').addEventListener('submit', evento => {
         evento.preventDefault();
         entrar($('#loginUsuario').value.trim(), $('#loginSenha').value);
@@ -668,20 +693,13 @@ function ligarEventos() {
         botao.addEventListener('click', () => irPara(botao.dataset.aba));
     });
 
-    $('#btnBuscarCodigo').addEventListener('click', buscarPorCodigo);
-    $('#buscaCodigo').addEventListener('keydown', evento => {
-        if (evento.key === 'Enter') {
-            evento.preventDefault();
-            buscarPorCodigo();
-        }
-    });
+    $('#buscaBicicletas').addEventListener('input', renderizarBicicletas);
 
     $('#filtrosStatus').addEventListener('click', evento => {
         const botao = evento.target.closest('.filtro');
         if (!botao) return;
         state.statusFiltro = botao.dataset.status;
         $$('#filtrosStatus .filtro').forEach(b => b.classList.toggle('ativo', b === botao));
-        $('#buscaCodigo').value = '';
         carregarBicicletas();
     });
 

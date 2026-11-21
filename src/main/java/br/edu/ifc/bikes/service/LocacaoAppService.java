@@ -37,7 +37,9 @@ public class LocacaoAppService {
                 CARTAO_CONCEITO);
 
         LocacaoResponseDTO locacao = locacaoService.criar(solicitacao, cliente.getUsuario().getId());
-        String confirmacao = codigoAppService.gerarConfirmacao(locacao.id(), dados.segredo());
+        String confirmacao = dados.versao() == 1
+                ? codigoAppService.gerarConfirmacao(locacao.id(), dados.segredo())
+                : codigoAppService.gerarConfirmacao(locacao.id(), dados.segredo(), dados.codigo());
         return new LocacaoAppResponseDTO(locacao, confirmacao);
     }
 }

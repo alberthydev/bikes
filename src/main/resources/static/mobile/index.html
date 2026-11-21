@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0f766e">
-    <title>Locabike · Aplicativo de demonstração</title>
+    <title>Locabike · Aluguel de bicicletas</title>
     <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
@@ -14,10 +14,13 @@
         <span class="logo" aria-hidden="true">🚲</span>
         <div>
             <h1>Locabike</h1>
-            <p>Aplicativo de demonstração</p>
+            <p id="topoSubtitulo">Aluguel de bicicletas</p>
         </div>
     </div>
-    <span class="chip">Conceito</span>
+    <div class="topo-acoes">
+        <span id="topoChip" class="chip">Conceito</span>
+        <button id="btnTopoPerfil" class="avatar-topo oculto" type="button" aria-label="Abrir perfil">L</button>
+    </div>
 </header>
 
 <main class="app-conteudo">
@@ -25,20 +28,30 @@
     <!-- ============ PAREAMENTO ============ -->
     <section id="telaPareamento" class="tela">
         <div class="cartao destaque">
-            <h2>Parear com o painel</h2>
+            <span class="passo">Passo 1 de 2</span>
+            <h2>Conectar ao painel</h2>
             <p class="texto-suave">
                 Leia o QR exibido na aba <strong>App</strong> do painel. Ele traz o tema, o cliente
-                de demonstração e um segredo temporário. Nada é enviado pela rede.
+                de demonstração, o catálogo de bicicletas e as locações recentes registradas no painel.
             </p>
 
             <div class="acoes">
-                <button id="btnCamera" class="botao" type="button">Ler QR com a câmera</button>
+                <button id="btnCamera" class="botao" type="button">Escanear QR Code</button>
+                <button id="btnImagemQr" class="botao secundario" type="button">Selecionar imagem</button>
+                <input id="arquivoQr" type="file" accept="image/*" hidden>
                 <button id="btnPararCamera" class="botao secundario oculto" type="button">Parar câmera</button>
+                <button id="btnLanterna" class="botao secundario oculto" type="button">Lanterna</button>
             </div>
 
-            <video id="videoQr" class="video-qr oculto" playsinline muted></video>
+            <div id="cameraArea" class="camera-area oculto">
+                <video id="videoQr" class="video-qr" playsinline muted></video>
+                <div class="mira" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+            <p id="statusCamera" class="dica oculto" role="status"></p>
 
-            <label class="campo">
+            <label class="campo campo-espacado">
                 <span>Ou cole o texto do QR</span>
                 <textarea id="textoConfig" rows="5" spellcheck="false"
                           placeholder='{"v":1,"pid":"...","seg":"...","usuario":{...},"bikes":[...]}'></textarea>
@@ -46,9 +59,10 @@
 
             <button id="btnUsarConfig" class="botao largo" type="button">Usar configuração</button>
             <p id="erroPareamento" class="mensagem-erro oculto" role="alert"></p>
+            <button id="btnVoltarApp" class="link-botao link-secundario oculto" type="button">Voltar ao aplicativo</button>
             <p class="dica">
-                No APK, o botão abre a câmera do celular. No navegador, a câmera e a criptografia
-                exigem HTTPS ou <code>localhost</code>.
+                No APK, a câmera é aberta dentro do próprio aplicativo, que decodifica o QR.
+                No navegador, a câmera exige HTTPS ou <code>localhost</code>.
             </p>
         </div>
     </section>
@@ -56,8 +70,15 @@
     <!-- ============ LOGIN ============ -->
     <section id="telaLogin" class="tela oculto">
         <div class="cartao destaque">
+            <span class="passo">Passo 2 de 2</span>
             <h2>Entrar</h2>
             <p class="texto-suave">Login de conceito: nenhuma senha real é enviada ou verificada.</p>
+
+            <div id="avisoPareamentoLogin" class="aviso oculto" role="status">
+                O pareamento salvo expirou. Você pode entrar para consultar o histórico, mas
+                precisa ler um novo QR para alugar.
+            </div>
+
             <form id="formLogin" class="formulario">
                 <label class="campo">
                     <span>E-mail</span>
@@ -70,64 +91,272 @@
                 <button class="botao largo" type="submit">Entrar</button>
             </form>
             <button id="btnCadastro" class="link-botao" type="button">Criar uma conta</button>
+            <button id="btnOutroPareamento" class="link-botao link-secundario" type="button">Ler outro QR de pareamento</button>
             <p class="dica">Senha de demonstração: <strong>123456</strong>.</p>
         </div>
     </section>
 
-    <!-- ============ LOCAÇÃO ============ -->
+    <!-- ============ APLICATIVO ============ -->
     <section id="telaApp" class="tela oculto">
-        <div class="cartao usuario-card">
-            <div>
-                <p class="rotulo">Conectado como</p>
-                <p class="nome-usuario" id="nomeUsuario"></p>
-                <p class="texto-suave" id="emailUsuario"></p>
-            </div>
-            <button id="btnSairApp" class="botao pequeno secundario" type="button">Sair</button>
-        </div>
 
-        <div class="cartao">
-            <h2>Nova locação</h2>
-            <p class="texto-suave">Escolha a bicicleta e por quantas horas pretende ficar com ela.</p>
-            <div id="listaBikes" class="lista-bikes"></div>
-
-            <div class="linha-horas">
-                <label class="campo">
-                    <span>Horas</span>
-                    <input id="horas" type="number" min="1" max="24" step="1" value="2">
-                </label>
-                <p class="estimativa">Estimativa<br><strong id="valorEstimado">R$ 10,00</strong></p>
+        <!-- INÍCIO -->
+        <div id="abaInicio" class="aba-conteudo">
+            <div class="saudacao">
+                <p class="rotulo">Bem-vindo de volta</p>
+                <h2 id="saudacaoNome">Olá!</h2>
+                <p class="texto-suave" id="saudacaoEmail"></p>
             </div>
 
-            <button id="btnGerarCodigo" class="botao largo" type="button">Gerar código de locação</button>
-            <p class="dica">Tarifa de conceito: R$ 5,00 por hora iniciada.</p>
-        </div>
+            <div id="cartaoLocacaoAtiva" class="cartao locacao-ativa oculto">
+                <div class="linha-entre">
+                    <span id="ativaStatus" class="selo ativa">Em andamento</span>
+                    <span id="ativaTempo" class="texto-suave"></span>
+                </div>
+                <div class="bike-destaque">
+                    <span class="bike-icone" aria-hidden="true">🚲</span>
+                    <div>
+                        <h3 id="ativaBike">—</h3>
+                        <p class="texto-suave" id="ativaModelo">—</p>
+                    </div>
+                </div>
+                <div class="grade-detalhes">
+                    <div>
+                        <span class="rotulo">Retirada</span>
+                        <strong id="ativaRetirada">—</strong>
+                    </div>
+                    <div>
+                        <span class="rotulo">Previsão</span>
+                        <strong id="ativaPrevisao">—</strong>
+                    </div>
+                    <div>
+                        <span class="rotulo">Valor estimado</span>
+                        <strong id="ativaValor">—</strong>
+                    </div>
+                </div>
+                <button id="btnVerAtiva" class="botao largo" type="button">Ver detalhes</button>
+            </div>
 
-        <div id="areaCodigo" class="cartao codigo-area oculto">
-            <h2>Leve este código para o painel</h2>
-            <p class="texto-suave">O painel valida a assinatura, cria a locação e devolve uma confirmação.</p>
-            <code id="codigoGerado" class="codigo-gerado"></code>
-            <div class="acoes">
-                <button id="btnCopiarCodigo" class="botao secundario" type="button">Copiar código</button>
-                <button id="btnNovoCodigo" class="botao secundario" type="button">Trocar bicicleta</button>
+            <div id="cartaoSemLocacao" class="cartao vazio-app oculto">
+                <span class="vazio-icone" aria-hidden="true">🚲</span>
+                <h3>Nenhuma locação ativa</h3>
+                <p class="texto-suave">Escolha uma bicicleta e comece a pedalar.</p>
+                <button class="botao largo" type="button" data-aba="alugar">Alugar agora</button>
+            </div>
+
+            <div class="grade-estatisticas">
+                <div class="cartao estatistica">
+                    <strong id="statTotal">0</strong>
+                    <span>locações</span>
+                </div>
+                <div class="cartao estatistica">
+                    <strong id="statHoras">0h</strong>
+                    <span>tempo pedalado</span>
+                </div>
+                <div class="cartao estatistica">
+                    <strong id="statValor">R$ 0,00</strong>
+                    <span>valor estimado</span>
+                </div>
+            </div>
+
+            <div class="cartao">
+                <div class="linha-entre">
+                    <h2>Atalhos</h2>
+                </div>
+                <div class="atalhos">
+                    <button class="atalho" type="button" data-aba="alugar">
+                        <span class="atalho-icone" aria-hidden="true">＋</span>
+                        <strong>Alugar</strong>
+                        <span>Nova locação</span>
+                    </button>
+                    <button class="atalho" type="button" data-aba="locacoes">
+                        <span class="atalho-icone" aria-hidden="true">☰</span>
+                        <strong>Minhas locações</strong>
+                        <span>Histórico e status</span>
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div id="areaConfirmacao" class="cartao oculto">
-            <h2>Confirmar no aplicativo</h2>
-            <p class="texto-suave">Digite o código que apareceu no painel depois de registrar a locação.</p>
-            <form id="formConfirmacao" class="formulario">
-                <label class="campo">
-                    <span>Confirmação do painel</span>
-                    <input id="confirmacao" autocomplete="off" spellcheck="false" placeholder="L12-AB3D" required>
-                </label>
-                <button class="botao largo" type="submit">Validar confirmação</button>
-            </form>
-            <p id="resultadoConfirmacao" class="mensagem-ok oculto" role="status"></p>
-            <p id="erroConfirmacao" class="mensagem-erro oculto" role="alert"></p>
+        <!-- ALUGAR -->
+        <div id="abaAlugar" class="aba-conteudo oculto">
+            <div class="titulo-aba">
+                <h2>Alugar bicicleta</h2>
+                <p class="texto-suave">Escolha a bicicleta e por quantas horas pretende ficar com ela.</p>
+            </div>
+
+            <div id="avisoAlugarExpirado" class="aviso oculto" role="status">
+                O pareamento expirou. Leia um novo QR no painel para gerar códigos de locação.
+                <button class="link-botao link-no-aviso" type="button" data-aba="perfil">Abrir perfil</button>
+            </div>
+
+            <div class="cartao">
+                <div id="listaBikes" class="lista-bikes"></div>
+
+                <div class="linha-horas">
+                    <label class="campo">
+                        <span>Horas</span>
+                        <input id="horas" type="number" min="1" max="24" step="1" value="2">
+                    </label>
+                    <p class="estimativa">Estimativa<br><strong id="valorEstimado">R$ 10,00</strong></p>
+                </div>
+
+                <button id="btnGerarCodigo" class="botao largo" type="button">Gerar código de locação</button>
+                <p class="dica">Tarifa de conceito: R$ 5,00 por hora iniciada.</p>
+            </div>
+
+            <div id="areaCodigo" class="cartao codigo-area oculto">
+                <div class="linha-entre">
+                    <h2>Leve este código para o painel</h2>
+                    <span id="codigoResumo" class="chip chip-escuro"></span>
+                </div>
+                <p class="texto-suave">O painel valida a assinatura, cria a locação e devolve uma confirmação.</p>
+                <code id="codigoGerado" class="codigo-gerado"></code>
+                <div class="acoes">
+                    <button id="btnCopiarCodigo" class="botao secundario" type="button">Copiar código</button>
+                    <button id="btnNovoCodigo" class="botao secundario" type="button">Trocar bicicleta</button>
+                </div>
+            </div>
+
+            <div id="areaConfirmacao" class="cartao oculto">
+                <h2>Confirmar no aplicativo</h2>
+                <p class="texto-suave">Digite o código que apareceu no painel depois de registrar a locação.</p>
+                <form id="formConfirmacao" class="formulario">
+                    <label class="campo">
+                        <span>Confirmação do painel</span>
+                        <input id="confirmacao" data-mascara="confirmacao" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="L12-AB3D4F56" required>
+                    </label>
+                    <button class="botao largo" type="submit">Validar confirmação</button>
+                </form>
+                <p id="erroConfirmacao" class="mensagem-erro oculto" role="alert"></p>
+            </div>
+
+            <div id="resultadoConfirmacao" class="cartao sucesso-locacao oculto" role="status"></div>
+        </div>
+
+        <!-- MINHAS LOCAÇÕES -->
+        <div id="abaLocacoes" class="aba-conteudo oculto">
+            <div class="titulo-aba">
+                <h2>Minhas locações</h2>
+                <p class="texto-suave">Acompanhe as locações ativas e o histórico do seu celular.</p>
+            </div>
+
+            <div id="filtrosLocacoes" class="filtros" role="tablist" aria-label="Filtrar locações">
+                <button class="filtro ativo" type="button" data-filtro="todas" role="tab" aria-selected="true">Todas</button>
+                <button class="filtro" type="button" data-filtro="ativas" role="tab" aria-selected="false">Ativas</button>
+                <button class="filtro" type="button" data-filtro="finalizadas" role="tab" aria-selected="false">Finalizadas</button>
+            </div>
+
+            <div id="listaLocacoes" class="lista-locacoes"></div>
+
+            <div id="vazioLocacoes" class="cartao vazio-app oculto">
+                <span class="vazio-icone" aria-hidden="true">📋</span>
+                <h3 id="vazioLocacoesTitulo">Nenhuma locação ainda</h3>
+                <p class="texto-suave" id="vazioLocacoesTexto">
+                    Depois que o painel confirmar sua primeira locação, ela aparece aqui.
+                </p>
+                <button class="botao largo" type="button" data-aba="alugar">Fazer primeira locação</button>
+            </div>
+        </div>
+
+        <!-- PERFIL -->
+        <div id="abaPerfil" class="aba-conteudo oculto">
+            <div class="cartao perfil-topo">
+                <span id="perfilAvatar" class="avatar-grande" aria-hidden="true">L</span>
+                <div class="perfil-dados">
+                    <h2 id="perfilNome">—</h2>
+                    <p class="texto-suave" id="perfilEmail">—</p>
+                    <span id="perfilCliente" class="selo neutro">Cliente</span>
+                </div>
+            </div>
+
+            <div class="cartao">
+                <div class="linha-entre">
+                    <h3>Pareamento</h3>
+                    <span id="perfilStatusPareamento" class="selo ativa">Ativo</span>
+                </div>
+                <div class="lista-detalhes compacta">
+                    <div>
+                        <span class="rotulo">Válido até</span>
+                        <strong id="perfilValidade">—</strong>
+                    </div>
+                    <div>
+                        <span class="rotulo">Bicicletas no catálogo</span>
+                        <strong id="perfilBikes">—</strong>
+                    </div>
+                </div>
+                <p class="dica">
+                    O segredo do QR fica apenas neste aparelho. Depois de expirar, leia um novo QR
+                    no painel para continuar alugando.
+                </p>
+                <button id="btnNovoPareamento" class="botao largo secundario" type="button">Ler novo QR de pareamento</button>
+            </div>
+
+            <div class="cartao">
+                <h3>Sobre o aplicativo</h3>
+                <div class="lista-detalhes compacta">
+                    <div>
+                        <span class="rotulo">Modo</span>
+                        <strong>Demonstração offline</strong>
+                    </div>
+                    <div>
+                        <span class="rotulo">Tarifa</span>
+                        <strong>R$ 5,00 / hora iniciada</strong>
+                    </div>
+                    <div>
+                        <span class="rotulo">Criptografia</span>
+                        <strong id="perfilCripto">—</strong>
+                    </div>
+                </div>
+                <p class="dica">
+                    As locações confirmadas ficam salvas neste aparelho. A devolução é registrada
+                    no painel do Locabike.
+                </p>
+            </div>
+
+            <button id="btnSairApp" class="botao largo perigo" type="button">Sair da conta</button>
+            <p class="dica centro">Locabike · protótipo de aplicativo</p>
         </div>
     </section>
 
 </main>
+
+<nav id="menuInferior" class="menu-inferior oculto" aria-label="Menu principal">
+    <button class="menu-item ativo" type="button" data-aba="inicio" aria-label="Início">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 9.5V21h14V9.5"></path>
+            <path d="M9 21v-6h6v6"></path>
+        </svg>
+        <span>Início</span>
+    </button>
+    <button class="menu-item" type="button" data-aba="alugar" aria-label="Alugar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="5.5" cy="17.5" r="3.5"></circle>
+            <circle cx="18.5" cy="17.5" r="3.5"></circle>
+            <path d="M12 17.5V14l-3-3 4-3 2 3h2"></path>
+            <circle cx="15" cy="5" r="1"></circle>
+        </svg>
+        <span>Alugar</span>
+    </button>
+    <button class="menu-item" type="button" data-aba="locacoes" aria-label="Minhas locações">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 6h13"></path>
+            <path d="M8 12h13"></path>
+            <path d="M8 18h13"></path>
+            <circle cx="3.5" cy="6" r="1"></circle>
+            <circle cx="3.5" cy="12" r="1"></circle>
+            <circle cx="3.5" cy="18" r="1"></circle>
+        </svg>
+        <span>Locações</span>
+    </button>
+    <button class="menu-item" type="button" data-aba="perfil" aria-label="Perfil">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"></path>
+        </svg>
+        <span>Perfil</span>
+    </button>
+</nav>
 
 <footer class="app-rodape">
     <span>Protótipo offline · sem chamadas à API</span>
@@ -135,6 +364,46 @@
 </footer>
 
 <div id="toast" class="toast oculto" role="status"></div>
+
+<dialog id="dialogLocacao" class="dialogo dialogo-locacao">
+    <div class="linha-entre">
+        <h2 id="dlgTitulo">Locação</h2>
+        <span id="dlgStatus" class="selo ativa">Ativa</span>
+    </div>
+    <div class="bike-destaque">
+        <span class="bike-icone" aria-hidden="true">🚲</span>
+        <div>
+            <h3 id="dlgBike">—</h3>
+            <p class="texto-suave" id="dlgModelo">—</p>
+        </div>
+    </div>
+    <div class="lista-detalhes">
+        <div>
+            <span class="rotulo">Retirada</span>
+            <strong id="dlgRetirada">—</strong>
+        </div>
+        <div>
+            <span class="rotulo">Previsão de devolução</span>
+            <strong id="dlgPrevisao">—</strong>
+        </div>
+        <div>
+            <span class="rotulo">Duração</span>
+            <strong id="dlgDuracao">—</strong>
+        </div>
+        <div>
+            <span class="rotulo" id="dlgRotuloValor">Valor estimado</span>
+            <strong id="dlgValor">—</strong>
+        </div>
+        <div>
+            <span class="rotulo">Confirmação do painel</span>
+            <strong id="dlgConfirmacao" class="texto-mono">—</strong>
+        </div>
+    </div>
+    <p id="dlgAviso" class="dica"></p>
+    <form method="dialog">
+        <button class="botao largo" type="submit">Fechar</button>
+    </form>
+</dialog>
 
 <dialog id="dialogCadastro" class="dialogo">
     <h2>Cadastro é apenas um conceito</h2>
@@ -152,6 +421,7 @@
 </dialog>
 
 <script src="vendor/jsQR.js"></script>
+<script src="mascaras.js"></script>
 <script src="mobile.js"></script>
 </body>
 </html>
